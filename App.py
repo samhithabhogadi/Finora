@@ -36,11 +36,11 @@ st.markdown("""
             padding: 8px 16px;
         }
         .stTextInput>div>div>input {
-            background-color: #ffffff !important; /* White background for text input */
+            background-color: #000000 !important; /* White background for text input */
             color: #000000 !important; /* Black text for input */
         }
         .stSelectbox>div>div>div>div {
-            background-color: #ffffff !important; /* White background for selectbox */
+            background-color: #000000!important; /* White background for selectbox */
             color: #000000 !important; /* Black text for selectbox */
         }
         .stMetricLabel, .stMetricValue {
@@ -48,11 +48,11 @@ st.markdown("""
             color: #000000 !important; /* Black text for metrics */
         }
         .stDataFrame {
-            background-color: #ffffff !important; /* White background for dataframe */
+            background-color:#000000 !important; /* White background for dataframe */
             color: #000000 !important; /* Black text for dataframe */
         }
         .stExpander {
-            background-color: #ffffff !important; /* White background for expander */
+            background-color: #000000!important; /* White background for expander */
             color: #000000 !important; /* Black text for expander */
         }
     </style>
