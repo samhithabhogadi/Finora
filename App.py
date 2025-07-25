@@ -29,8 +29,8 @@ st.markdown("""
             background-color:#000000 !important; /* White background behind all text */
         }
         .stButton>button {
-            background-color: #ffffff ; /* Keep button background as is */
-            color: #000000!important; /* White text for buttons */
+            background-color: #000000  ; /* Keep button background as is */
+            color: #000000 !important; /* White text for buttons */
             border-radius: 8px;
             border: none;
             padding: 8px 16px;
