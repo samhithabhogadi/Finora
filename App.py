@@ -63,7 +63,7 @@ if os.path.exists('user_data.csv'):
 else:
     st.session_state['data'] = pd.DataFrame(columns=['Type', 'Amount', 'Category', 'Date'])
 
-menu = st.sidebar.radio("Navigation", ["Dashboard", "Add Entry", "Financial Education"])
+
 
 # Add Entry
 if menu == "Add Entry":
