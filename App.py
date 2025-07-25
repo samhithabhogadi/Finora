@@ -9,19 +9,23 @@ import yfinance as yf
 if 'dark_mode' not in st.session_state:
     st.session_state['dark_mode'] = False
 
-# Toggle switch
-mode = st.sidebar.checkbox("Dark Mode", value=st.session_state['dark_mode'])
+# Initialize dark mode in session state
+if 'dark_mode' not in st.session_state:
+    st.session_state['dark_mode'] = False
+
+# Toggle switch in sidebar
+mode = st.sidebar.checkbox("🌗 Dark Mode", value=st.session_state['dark_mode'])
 st.session_state['dark_mode'] = mode
 
 # Theme colors
 if st.session_state['dark_mode']:
-    bg_color = "#ffffff"
-    text_color = "#000000"
-    sidebar_bg = "#f0f2f6"
+    bg_color = "#1e1e1e"  # Black background
+    text_color = "#ffffff"  # White text
+    sidebar_bg = "#2e2e2e"  # Darker sidebar
 else:
-    bg_color = "#1e1e1e"
-    text_color = "#ffffff"
-    sidebar_bg = "#2e2e2e"
+    bg_color = "#ffffff"  # White background
+    text_color = "#000000"  # Black text
+    sidebar_bg = "#f0f2f6"  # Light sidebar
 
 # Theme styling
 st.markdown(
