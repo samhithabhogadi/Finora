@@ -5,6 +5,14 @@ import matplotlib.pyplot as plt
 from datetime import datetime
 import yfinance as yf
 
+# Initialize theme toggle
+if 'dark_mode' not in st.session_state:
+    st.session_state['dark_mode'] = False
+
+# Toggle switch
+mode = st.sidebar.checkbox("🌗 Dark Mode", value=st.session_state['dark_mode'])
+st.session_state['dark_mode'] = mode
+
 # Theme colors
 if st.session_state['dark_mode']:
     bg_color = "#ffffff"
