@@ -15,13 +15,13 @@ st.session_state['dark_mode'] = mode
 
 # Theme colors
 if st.session_state['dark_mode']:
-    bg_color = "#ffffff"
-    text_color = "#000000"
-    sidebar_bg = "#f0f2f6"
-else:
     bg_color = "#1e1e1e"
     text_color = "#ffffff"
     sidebar_bg = "#2e2e2e"
+else:
+    bg_color = "#ffffff"
+    text_color = "#000000"
+    sidebar_bg = "#f0f2f6"
 
 # Apply global styles
 st.markdown(f"""
