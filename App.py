@@ -9,51 +9,62 @@ import os
 st.set_page_config(page_title="Finora - Student Budget Manager", layout="wide", initial_sidebar_state="expanded")
 
 ## Replace the existing st.markdown style block with this
-st.markdown("""
+st.markdown(
+    """
     <style>
-        html, body, [class*="css"] {
+        /* Global background and text */
+        html, body, .stApp {
             background-color: #ffffff !important;
             color: #000000 !important;
-            font-family: 'Segoe UI', sans-serif;
         }
-        .stApp {
+
+        /* Fix for widgets input background */
+        input, textarea, select {
             background-color: #ffffff !important;
-        }
-        .sidebar .sidebar-content {
-            background-color: #f0f2f6 !important;
-        }
-        h1, h2, h3, h4, h5, h6, p, span, div {
             color: #000000 !important;
         }
-        .stButton>button {
-            background-color: #4f8df7;
-            color: #ffffff !important;
+
+        /* Button Styling */
+        .stButton > button {
+            background-color: #4CAF50;
+            color: white;
             border-radius: 8px;
-            border: none;
-            padding: 8px 16px;
+            padding: 10px 20px;
+            font-weight: 600;
         }
-        .stButton>button:hover {
-            background-color: #2f6dd5;
+
+        .stButton > button:hover {
+            background-color: #45a049;
         }
-        .stTextInput>div>div>input,
-        .stSelectbox>div>div>div>div {
-            background-color: #ffffff !important;
+
+        /* Sidebar styling */
+        .css-1d391kg {  /* streamlit sidebar container */
+            background-color: #f9f9f9 !important;
             color: #000000 !important;
         }
-        .stDataFrame, .stTable {
-            background-color: #ffffff !important;
+
+        /* Headings and labels */
+        h1, h2, h3, h4, h5, h6, label, p, span, div {
             color: #000000 !important;
         }
-        .stMetric {
-            background-color: #ffffff !important;
-            color: #000000 !important;
+
+        /* Metric cards or custom blocks if any */
+        .metric-card {
+            background-color: #ffffff;
             border-radius: 10px;
-            box-shadow: 0 1px 6px rgba(0, 0, 0, 0.05);
-            padding: 10px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+            padding: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        /* DataFrame text */
+        .css-1fcb1v8, .css-ffhzg2 {
+            color: #000000 !important;
         }
     </style>
-""", unsafe_allow_html=True)
-
+    """,
+    unsafe_allow_html=True
+)
 st.title("💰 Finora - Student Budget Manager")
 st.markdown("A simple app to track your income and expenses and learn about money management.")
 
