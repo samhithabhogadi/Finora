@@ -11,49 +11,35 @@ st.set_page_config(page_title="Finora - Student Budget Manager", layout="wide", 
 ## Replace the existing st.markdown style block with this
 st.markdown("""
     <style>
-        html, body, [class*="css"] {
-            background-color: #ffffff !important; /* White background for the entire app */
-            color: #000000 !important; /* Black text for all elements */
+        html, body, [class*="css"]  {
+            background-color: #f9f9fb !important;
+            color: #000000 !important;
             font-family: 'Segoe UI', sans-serif;
         }
-        .stApp {
-            background-color: #ffffff !important; /* White background for main app area */
-            color: #000000 !important; /* Black text for main app area */
-        }
         .sidebar .sidebar-content {
-            background-color: #ffffff !important; /* White background for sidebar */
-            color: #000000 !important; /* Black text for sidebar */
+            background-color: #eef1f6 !important;
+        }
+        .stApp {
+            background-color: #ffffff;
+            color: #000000;
         }
         h1, h2, h3, h4, h5, h6, p, span, div {
-            color: #000000 !important; /* Black text for all text elements */
-            background-color: #ffffff !important; /* White background behind all text */
+            color: #000000 !important;
         }
         .stButton>button {
-            background-color: #4f8df7; /* Keep button background as is */
-            color: #ffffff; /* White text for buttons */
+            background-color: #4f8df7;
+            color: white;
             border-radius: 8px;
             border: none;
             padding: 8px 16px;
         }
         .stTextInput>div>div>input {
-            background-color: #ffffff !important; /* White background for text input */
-            color: #000000 !important; /* Black text for input */
+            background-color: #ffffff;
+            color: #000000;
         }
         .stSelectbox>div>div>div>div {
-            background-color: #ffffff !important; /* White background for selectbox */
-            color: #000000 !important; /* Black text for selectbox */
-        }
-        .stMetricLabel, .stMetricValue {
-            background-color: #ffffff !important; /* White background for metrics */
-            color: #000000 !important; /* Black text for metrics */
-        }
-        .stDataFrame {
-            background-color: #ffffff !important; /* White background for dataframe */
-            color: #000000 !important; /* Black text for dataframe */
-        }
-        .stExpander {
-            background-color: #ffffff !important; /* White background for expander */
-            color: #000000 !important; /* Black text for expander */
+            background-color: #ffffff;
+            color: #000000;
         }
     </style>
 """, unsafe_allow_html=True)
