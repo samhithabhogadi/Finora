@@ -5,53 +5,45 @@ import matplotlib.pyplot as plt
 from datetime import datetime
 import yfinance as yf
 
-# Initialize dark mode in session state
+# Initialize theme toggle
 if 'dark_mode' not in st.session_state:
     st.session_state['dark_mode'] = False
 
-# Toggle switch in sidebar
+# Toggle switch
 mode = st.sidebar.checkbox("🌗 Dark Mode", value=st.session_state['dark_mode'])
 st.session_state['dark_mode'] = mode
 
 # Theme colors
 if st.session_state['dark_mode']:
-    bg_color = "#ffffff"
-    text_color = "#000000"
-    sidebar_bg = "#f0f2f6"
+    bg_color = "#1e1e1e"  # Dark mode background
+    text_color = "#ffffff"  # Dark mode text
+    sidebar_bg = "#2e2e2e"  # Dark mode sidebar
 else:
-    bg_color = "#1e1e1e"
-    text_color = "#ffffff"
-    sidebar_bg = "#2e2e2e"
+    bg_color = "#ffffff"  # Light mode background
+    text_color = "#000000"  # Light mode text
+    sidebar_bg = "#f0f2f6"  # Light mode sidebar
 
 # Apply global styles
-st.markdown("""
+st.markdown(f"""
     <style>
-        .stTextInput input, .stNumberInput input, .stDateInput input {
-            background-color: #f5f5f5;
-            color: #000000;
-        }
-        .stSelectbox div[data-baseweb="select"] > div {
-            background-color: #f5f5f5 !important;
-            color: #000000 !important;
-        }
-        .stButton>button {
-            background-color: #1f77f4;
-            color: white;
-        }
+        html, body, [class*="css"]  {{
+            background-color: {bg_color} !important;
+            color: {text_color} !important;
+        }}
+        .sidebar .sidebar-content {{
+            background-color: {sidebar_bg} !important;
+        }}
+        .stApp {{
+            background-color: {bg_color};
+            color: {text_color};
+        }}
+        h1, h2, h3, h4, h5, h6, p, span, div {{
+            color: {text_color} !important;
+        }}
     </style>
 """, unsafe_allow_html=True)
 
-st.title("💰 Finora - Student Budget Manager")
-st.write("A simple app to track your income and expenses and learn about money management.")
-st.subheader("➕ Add Income or Expense")
-
-entry_type = st.selectbox("Type", ["Income", "Expense"])
-amount = st.number_input("Amount", min_value=0.0, format="%.2f")
-category = st.text_input("Category")
-entry_date = st.date_input("Date", value=date.today())
-
-if st.button("Add Entry"):
-    st.success("Entry added!")
+)
 #
 st.set_page_config(page_title="Finora - Student Budget Manager", layout="wide", initial_sidebar_state="expanded")
 
