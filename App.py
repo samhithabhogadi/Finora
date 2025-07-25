@@ -24,63 +24,53 @@ else:
     sidebar_bg = "#2e2e2e"
 
 # Apply global styles
-st.markdown(
-    f"""
+st.markdown(f"""
     <style>
-        html, body, [class*="css"] {{
+        html, body, .stApp {{
             background-color: {bg_color} !important;
             color: {text_color} !important;
         }}
-        .stApp {{
-            background-color: {bg_color};
-            color: {text_color};
-        }}
-        .sidebar .sidebar-content {{
+
+        .sidebar .sidebar-content, .css-1d391kg, .css-hxt7ib {{
             background-color: {sidebar_bg} !important;
-        }}
-
-        input, select, textarea {{
-            background-color: {'#ffffff' if not st.session_state['dark_mode'] else '#333333'} !important;
-            color: {'#000000' if not st.session_state['dark_mode'] else '#ffffff'} !important;
-            border: 1px solid {'#ccc' if not st.session_state['dark_mode'] else '#555'} !important;
-        }}
-
-        .stTextInput > div > div > input,
-        .stNumberInput > div > div > input,
-        .stDateInput input,
-        .stSelectbox > div > div,
-        .stSelectbox > div > div > div {{
-            background-color: {'#ffffff' if not st.session_state['dark_mode'] else '#333333'} !important;
-            color: {'#000000' if not st.session_state['dark_mode'] else '#ffffff'} !important;
-            border-radius: 5px;
-            border: 1px solid {'#ccc' if not st.session_state['dark_mode'] else '#555'} !important;
-        }}
-
-        h1, h2, h3, h4, h5, h6, p, span, div, label {{
             color: {text_color} !important;
         }}
 
-        .stButton>button {{
-            background-color: #3b82f6;
-            color: white;
-            border-radius: 6px;
-            padding: 0.5rem 1rem;
-        }}
-        .stButton>button:hover {{
-            background-color: #2563eb;
+        /* Input fields, text areas, and dropdowns */
+        .stTextInput > div > input,
+        .stNumberInput > div > input,
+        .stDateInput > div > input,
+        .stSelectbox > div > div,
+        textarea {{
+            background-color: {bg_color} !important;
+            color: {text_color} !important;
+            border: 1px solid #888 !important;
         }}
 
-        .metric-card {{
-            background-color: {bg_color};
-            padding: 1rem;
-            border-radius: 6px;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+        /* Buttons */
+        .stButton > button {{
+            background-color: #4CAF50;
+            color: white;
+        }}
+
+        /* Metric Cards */
+        .stMetric {{
+            background-color: {bg_color} !important;
+            color: {text_color} !important;
+            border-radius: 0.5rem;
+            padding: 0.5rem;
+        }}
+
+        h1, h2, h3, h4, h5, h6, p, span, div {{
+            color: {text_color} !important;
+        }}
+
+        /* Pie chart fix for dark background */
+        .main svg {{
+            background-color: {bg_color} !important;
         }}
     </style>
-    """,
-    unsafe_allow_html=True
-)
-
+""", unsafe_allow_html=True)
 #
 st.set_page_config(page_title="Finora - Student Budget Manager", layout="wide", initial_sidebar_state="expanded")
 
