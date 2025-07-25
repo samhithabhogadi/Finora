@@ -29,30 +29,30 @@ st.markdown("""
             background-color:#000000 !important; /* White background behind all text */
         }
         .stButton>button {
-            background-color: #ffffff; /* Keep button background as is */
+            background-color: #000000; /* Keep button background as is */
             color: #ffffff !important; /* White text for buttons */
             border-radius: 8px;
             border: none;
             padding: 8px 16px;
         }
         .stTextInput>div>div>input {
-            background-color: #ffffff !important; /* White background for text input */
+            background-color:#000000 !important; /* White background for text input */
             color: #000000 !important; /* Black text for input */
         }
         .stSelectbox>div>div>div>div {
-            background-color: #ffffff !important; /* White background for selectbox */
+            background-color: #000000!important; /* White background for selectbox */
             color: #000000 !important; /* Black text for selectbox */
         }
         .stMetricLabel, .stMetricValue {
-            background-color: #ffffff !important; /* White background for metrics */
+            background-color: #000000 !important; /* White background for metrics */
             color: #000000 !important; /* Black text for metrics */
         }
         .stDataFrame {
-            background-color: #ffffff !important; /* White background for dataframe */
+            background-color: #000000!important; /* White background for dataframe */
             color: #000000 !important; /* Black text for dataframe */
         }
         .stExpander {
-            background-color: #ffffff !important; /* White background for expander */
+            background-color: #000000!important; /* White background for expander */
             color: #000000 !important; /* Black text for expander */
         }
     </style>
