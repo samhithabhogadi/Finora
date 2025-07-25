@@ -44,7 +44,7 @@ st.markdown("""
             color: #000000 !important; /* Black text for selectbox */
         }
         .stMetricLabel, .stMetricValue {
-            background-color: #ffffff !important; /* White background for metrics */
+            background-color: #000000 !important; /* White background for metrics */
             color: #000000 !important; /* Black text for metrics */
         }
         .stDataFrame {
