@@ -23,6 +23,49 @@ else:
     text_color = "#ffffff"
     sidebar_bg = "#2e2e2e"
 
+# Theme styling
+st.markdown(
+    f"""
+    <style>
+        .stApp {{
+            background-color: {bg_color};
+            color: {text_color};
+        }}
+        .css-1cpxqw2, .stTextInput > div > div > input, .stNumberInput > div > div > input,
+        .stSelectbox > div > div > div > div, .stDateInput > div > input {{
+            background-color: {sidebar_bg};
+            color: {text_color};
+        }}
+        .stButton > button {{
+            background-color: {sidebar_bg};
+            color: {text_color};
+            border: none;
+        }}
+        .stButton > button:hover {{
+            background-color: #ff4b4b;
+            color: #fff;
+        }}
+    </style>
+    """,
+    unsafe_allow_html=True
+)
+
+st.markdown(
+    f"""
+    <style>
+        .css-6qob1r {{
+            color: {text_color};
+        }}
+        .css-1v3fvcr {{
+            background-color: {sidebar_bg};
+            color: {text_color};
+        }}
+    </style>
+    """,
+    unsafe_allow_html=True
+)
+
+
 # Apply global styles
 st.markdown(f"""
     <style>
