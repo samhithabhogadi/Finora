@@ -9,14 +9,6 @@ import yfinance as yf
 if 'dark_mode' not in st.session_state:
     st.session_state['dark_mode'] = False
 
-# Initialize dark mode in session state
-if 'dark_mode' not in st.session_state:
-    st.session_state['dark_mode'] = False
-
-# Toggle switch in sidebar
-mode = st.sidebar.checkbox("🌗 Dark Mode", value=st.session_state['dark_mode'])
-st.session_state['dark_mode'] = mode
-
 # Theme colors
 if st.session_state['dark_mode']:
     bg_color = "#1e1e1e"  # Black background
@@ -27,68 +19,43 @@ else:
     text_color = "#000000"  # Black text
     sidebar_bg = "#f0f2f6"  # Light sidebar
 
-# Theme styling
+# Apply global styles
 st.markdown(
     f"""
     <style>
+        html, body, [class*="css"] {{
+            background-color: {bg_color} !important;
+            color: {text_color} !important;
+        }}
         .stApp {{
             background-color: {bg_color};
             color: {text_color};
-        }}
-        .css-1cpxqw2, .stTextInput > div > div > input, .stNumberInput > div > div > input,
-        .stSelectbox > div > div > div > div, .stDateInput > div > input {{
-            background-color: {sidebar_bg};
-            color: {text_color};
-        }}
-        .stButton > button {{
-            background-color: {sidebar_bg};
-            color: {text_color};
-            border: none;
-        }}
-        .stButton > button:hover {{
-            background-color: #ff4b4b;
-            color: #fff;
-        }}
-    </style>
-    """,
-    unsafe_allow_html=True
-)
-
-st.markdown(
-    f"""
-    <style>
-        .css-6qob1r {{
-            color: {text_color};
-        }}
-        .css-1v3fvcr {{
-            background-color: {sidebar_bg};
-            color: {text_color};
-        }}
-    </style>
-    """,
-    unsafe_allow_html=True
-)
-
-
-# Apply global styles
-st.markdown(f"""
-    <style>
-        html, body, [class*="css"]  {{
-            background-color: {bg_color} !important;
-            color: {text_color} !important;
         }}
         .sidebar .sidebar-content {{
             background-color: {sidebar_bg} !important;
         }}
-        .stApp {{
-            background-color: {bg_color};
-            color: {text_color};
-        }}
-        h1, h2, h3, h4, h5, h6, p, span, div {{
+        h1, h2, h3, h4, h5, h6, p, span, div, label, input, select, textarea {{
             color: {text_color} !important;
         }}
+        .stButton>button {{
+            background-color: #3b82f6;
+            color: white;
+            border-radius: 6px;
+            padding: 0.5rem 1rem;
+        }}
+        .stButton>button:hover {{
+            background-color: #2563eb;
+        }}
+        .metric-card {{
+            background-color: {bg_color};
+            padding: 1rem;
+            border-radius: 6px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+        }}
     </style>
-""", unsafe_allow_html=True)
+    """,
+    unsafe_allow_html=True
+)
 
 st.set_page_config(page_title="Finora - Student Budget Manager", layout="wide", initial_sidebar_state="expanded")
 
