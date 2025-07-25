@@ -26,7 +26,7 @@ st.markdown(
 
         /* Button Styling */
         .stButton > button {
-            background-color: ##ffffff;
+            background-color: #4f8df7;
             color: white;
             border-radius: 8px;
             padding: 10px 20px;
@@ -39,7 +39,7 @@ st.markdown(
 
         /* Sidebar styling */
         .css-1d391kg {  /* streamlit sidebar container */
-            background-color: #f9f9f9 !important;
+            background-color: #ffffff !important;
             color: #000000 !important;
         }
 
