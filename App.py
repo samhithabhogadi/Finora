@@ -13,24 +13,33 @@ if 'dark_mode' not in st.session_state:
 mode = st.sidebar.checkbox("🌗 Dark Mode", value=st.session_state['dark_mode'])
 st.session_state['dark_mode'] = mode
 
-# Apply theme styles
+# Theme colors
 if st.session_state['dark_mode']:
     bg_color = "#1e1e1e"
     text_color = "#ffffff"
+    sidebar_bg = "#2e2e2e"
 else:
-    bg_color = "#f9f9f9"
+    bg_color = "#ffffff"
     text_color = "#000000"
+    sidebar_bg = "#f0f2f6"
 
+# Apply global styles
 st.markdown(f"""
     <style>
-    .main {{
-        background-color: {bg_color};
-        color: {text_color};
-    }}
-    .sidebar .sidebar-content {{
-        background: {'#333' if mode else '#f0f0f0'};
-        color: {text_color};
-    }}
+        html, body, [class*="css"]  {{
+            background-color: {bg_color} !important;
+            color: {text_color} !important;
+        }}
+        .sidebar .sidebar-content {{
+            background-color: {sidebar_bg} !important;
+        }}
+        .stApp {{
+            background-color: {bg_color};
+            color: {text_color};
+        }}
+        h1, h2, h3, h4, h5, h6, p, span, div {{
+            color: {text_color} !important;
+        }}
     </style>
 """, unsafe_allow_html=True)
 
@@ -41,6 +50,7 @@ st.markdown("A simple app to track your income and expenses and learn about mone
 
 if 'data' not in st.session_state:
     st.session_state['data'] = pd.DataFrame(columns=['Type', 'Amount', 'Category', 'Date'])
+
 
 
 # Navigation
