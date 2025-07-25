@@ -24,53 +24,34 @@ else:
     sidebar_bg = "#2e2e2e"
 
 # Apply global styles
-st.markdown(f"""
+st.markdown("""
     <style>
-        html, body, .stApp {{
-            background-color: {bg_color} !important;
-            color: {text_color} !important;
-        }}
-
-        .sidebar .sidebar-content, .css-1d391kg, .css-hxt7ib {{
-            background-color: {sidebar_bg} !important;
-            color: {text_color} !important;
-        }}
-
-        /* Input fields, text areas, and dropdowns */
-        .stTextInput > div > input,
-        .stNumberInput > div > input,
-        .stDateInput > div > input,
-        .stSelectbox > div > div,
-        textarea {{
-            background-color: {bg_color} !important;
-            color: {text_color} !important;
-            border: 1px solid #888 !important;
-        }}
-
-        /* Buttons */
-        .stButton > button {{
-            background-color: #4CAF50;
+        .stTextInput input, .stNumberInput input, .stDateInput input {
+            background-color: #f5f5f5;
+            color: #000000;
+        }
+        .stSelectbox div[data-baseweb="select"] > div {
+            background-color: #f5f5f5 !important;
+            color: #000000 !important;
+        }
+        .stButton>button {
+            background-color: #1f77f4;
             color: white;
-        }}
-
-        /* Metric Cards */
-        .stMetric {{
-            background-color: {bg_color} !important;
-            color: {text_color} !important;
-            border-radius: 0.5rem;
-            padding: 0.5rem;
-        }}
-
-        h1, h2, h3, h4, h5, h6, p, span, div {{
-            color: {text_color} !important;
-        }}
-
-        /* Pie chart fix for dark background */
-        .main svg {{
-            background-color: {bg_color} !important;
-        }}
+        }
     </style>
 """, unsafe_allow_html=True)
+
+st.title("💰 Finora - Student Budget Manager")
+st.write("A simple app to track your income and expenses and learn about money management.")
+st.subheader("➕ Add Income or Expense")
+
+entry_type = st.selectbox("Type", ["Income", "Expense"])
+amount = st.number_input("Amount", min_value=0.0, format="%.2f")
+category = st.text_input("Category")
+entry_date = st.date_input("Date", value=date.today())
+
+if st.button("Add Entry"):
+    st.success("Entry added!")
 #
 st.set_page_config(page_title="Finora - Student Budget Manager", layout="wide", initial_sidebar_state="expanded")
 
