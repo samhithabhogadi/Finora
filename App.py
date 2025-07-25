@@ -122,7 +122,7 @@ elif menu == "Dashboard":
             ax.axis('equal')
             st.pyplot(fig)
 
- st.markdown("### 💡 Investment Suggestions")
+        st.markdown("### 💡 Investment Suggestions")
         if balance > 500:
             st.success("You have a surplus! Here are personalized investment ideas:")
             st.markdown("""
