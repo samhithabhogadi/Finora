@@ -38,9 +38,28 @@ st.markdown(
         .sidebar .sidebar-content {{
             background-color: {sidebar_bg} !important;
         }}
-        h1, h2, h3, h4, h5, h6, p, span, div, label, input, select, textarea {{
+
+        input, select, textarea {{
+            background-color: {'#ffffff' if not st.session_state['dark_mode'] else '#333333'} !important;
+            color: {'#000000' if not st.session_state['dark_mode'] else '#ffffff'} !important;
+            border: 1px solid {'#ccc' if not st.session_state['dark_mode'] else '#555'} !important;
+        }}
+
+        .stTextInput > div > div > input,
+        .stNumberInput > div > div > input,
+        .stDateInput input,
+        .stSelectbox > div > div,
+        .stSelectbox > div > div > div {{
+            background-color: {'#ffffff' if not st.session_state['dark_mode'] else '#333333'} !important;
+            color: {'#000000' if not st.session_state['dark_mode'] else '#ffffff'} !important;
+            border-radius: 5px;
+            border: 1px solid {'#ccc' if not st.session_state['dark_mode'] else '#555'} !important;
+        }}
+
+        h1, h2, h3, h4, h5, h6, p, span, div, label {{
             color: {text_color} !important;
         }}
+
         .stButton>button {{
             background-color: #3b82f6;
             color: white;
@@ -50,6 +69,7 @@ st.markdown(
         .stButton>button:hover {{
             background-color: #2563eb;
         }}
+
         .metric-card {{
             background-color: {bg_color};
             padding: 1rem;
@@ -61,6 +81,7 @@ st.markdown(
     unsafe_allow_html=True
 )
 
+#
 st.set_page_config(page_title="Finora - Student Budget Manager", layout="wide", initial_sidebar_state="expanded")
 
 st.title("💰 Finora - Student Budget Manager")
