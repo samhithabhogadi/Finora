@@ -13,19 +13,19 @@ st.markdown("""
     <style>
         html, body, [class*="css"] {
             background-color: #000000 !important; /* White background for entire app */
-            color: #000000 !important; /* Black text for all elements */
+            color: #ffffff !important; /* Black text for all elements */
             font-family: 'Segoe UI', sans-serif;
         }
         .stApp {
             background-color: #000000 !important; /* White background for main app area */
-            color: #000000 !important; /* Black text for main app area */
+            color: #ffffff!important; /* Black text for main app area */
         }
         .sidebar .sidebar-content {
             background-color: #000000 !important; /* White background for sidebar */
-            color: #000000 !important; /* Black text for sidebar */
+            color: #ffffff !important; /* Black text for sidebar */
         }
         h1, h2, h3, h4, h5, h6, p, span, div {
-            color: #000000 !important; /* Black text for all text elements */
+            color: #ffffff!important; /* Black text for all text elements */
             background-color: #ffffff !important; /* White background behind all text */
         }
         .stButton>button {
