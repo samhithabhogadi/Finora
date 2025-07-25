@@ -12,41 +12,44 @@ st.set_page_config(page_title="Finora - Student Budget Manager", layout="wide", 
 st.markdown("""
     <style>
         html, body, [class*="css"] {
-            background-color: #f7f9fc !important;
+            background-color: #ffffff !important;
             color: #000000 !important;
             font-family: 'Segoe UI', sans-serif;
         }
         .stApp {
-            background-color: #ffffff;
+            background-color: #ffffff !important;
+        }
+        .sidebar .sidebar-content {
+            background-color: #f0f2f6 !important;
         }
         h1, h2, h3, h4, h5, h6, p, span, div {
             color: #000000 !important;
         }
-        .sidebar .sidebar-content {
-            background-color: #eaf0f8 !important;
-        }
         .stButton>button {
-            background-color: #4a90e2;
-            color: white;
-            border: none;
+            background-color: #4f8df7;
+            color: #ffffff !important;
             border-radius: 8px;
-            padding: 10px 20px;
-            font-weight: 600;
-            transition: 0.2s ease-in-out;
+            border: none;
+            padding: 8px 16px;
         }
         .stButton>button:hover {
-            background-color: #357abd;
+            background-color: #2f6dd5;
         }
         .stTextInput>div>div>input,
         .stSelectbox>div>div>div>div {
-            background-color: #ffffff;
-            color: #000000;
+            background-color: #ffffff !important;
+            color: #000000 !important;
+        }
+        .stDataFrame, .stTable {
+            background-color: #ffffff !important;
+            color: #000000 !important;
         }
         .stMetric {
-            background-color: #ffffff;
-            padding: 10px;
+            background-color: #ffffff !important;
+            color: #000000 !important;
             border-radius: 10px;
-            box-shadow: 0 1px 5px rgba(0,0,0,0.1);
+            box-shadow: 0 1px 6px rgba(0, 0, 0, 0.05);
+            padding: 10px;
         }
     </style>
 """, unsafe_allow_html=True)
