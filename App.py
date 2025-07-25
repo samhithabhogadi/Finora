@@ -29,7 +29,7 @@ st.markdown("""
             background-color: #ffffff !important; /* White background behind all text */
         }
         .stButton>button {
-            background-color: #4f8df7; /* Keep button background as is */
+            background-color: #ffffff; /* Keep button background as is */
             color: #ffffff !important; /* White text for buttons */
             border-radius: 8px;
             border: none;
