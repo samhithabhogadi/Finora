@@ -11,35 +11,42 @@ st.set_page_config(page_title="Finora - Student Budget Manager", layout="wide", 
 ## Replace the existing st.markdown style block with this
 st.markdown("""
     <style>
-        html, body, [class*="css"]  {
-            background-color: #f9f9fb !important;
+        html, body, [class*="css"] {
+            background-color: #f7f9fc !important;
             color: #000000 !important;
             font-family: 'Segoe UI', sans-serif;
         }
-        .sidebar .sidebar-content {
-            background-color: #eef1f6 !important;
-        }
         .stApp {
             background-color: #ffffff;
-            color: #000000;
         }
         h1, h2, h3, h4, h5, h6, p, span, div {
             color: #000000 !important;
         }
+        .sidebar .sidebar-content {
+            background-color: #eaf0f8 !important;
+        }
         .stButton>button {
-            background-color: #4f8df7;
+            background-color: #4a90e2;
             color: white;
-            border-radius: 8px;
             border: none;
-            padding: 8px 16px;
+            border-radius: 8px;
+            padding: 10px 20px;
+            font-weight: 600;
+            transition: 0.2s ease-in-out;
         }
-        .stTextInput>div>div>input {
-            background-color: #ffffff;
-            color: #000000;
+        .stButton>button:hover {
+            background-color: #357abd;
         }
+        .stTextInput>div>div>input,
         .stSelectbox>div>div>div>div {
             background-color: #ffffff;
             color: #000000;
+        }
+        .stMetric {
+            background-color: #ffffff;
+            padding: 10px;
+            border-radius: 10px;
+            box-shadow: 0 1px 5px rgba(0,0,0,0.1);
         }
     </style>
 """, unsafe_allow_html=True)
