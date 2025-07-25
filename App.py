@@ -5,44 +5,28 @@ import matplotlib.pyplot as plt
 from datetime import datetime, date
 import yfinance as yf
 
-# Initialize theme toggle
-if 'dark_mode' not in st.session_state:
-    st.session_state['dark_mode'] = False
+st.set_page_config(page_title="Finora - Student Budget Manager", layout="wide", initial_sidebar_state="expanded")
 
-# Toggle switch
-mode = st.sidebar.checkbox("🌗 Dark Mode", value=st.session_state['dark_mode'])
-st.session_state['dark_mode'] = mode
-
-# Theme colors
-if st.session_state['dark_mode']:
-    bg_color = "#1e1e1e"  # Dark mode background
-    text_color = "#ffffff"  # Dark mode text
-    sidebar_bg = "#2e2e2e"  # Dark mode sidebar
-else:
-    bg_color = "#ffffff"  # Light mode background
-    text_color = "#000000"  # Light mode text
-    sidebar_bg = "#f0f2f6"  # Light mode sidebar
-
-# Apply global styles
-st.markdown(f"""
+# Apply light mode styles
+st.markdown("""
     <style>
-        html, body, [class*="css"]  {{
-            background-color: {bg_color} !important;
-            color: {text_color} !important;
-        }}
-        .sidebar .sidebar-content {{
-            background-color: {sidebar_bg} !important;
-        }}
-        .stApp {{
-            background-color: {bg_color};
-            color: {text_color};
-        }}
-        h1, h2, h3, h4, h5, h6, p, span, div {{
-            color: {text_color} !important;
-        }}
+        html, body, [class*="css"]  {
+            background-color: #ffffff !important;
+            color: #000000 !important;
+        }
+        .sidebar .sidebar-content {
+            background-color: #f0f2f6 !important;
+        }
+        .stApp {
+            background-color: #ffffff;
+            color: #000000;
+        }
+        h1, h2, h3, h4, h5, h6, p, span, div {
+            color: #000000 !important;
+        }
     </style>
 """, unsafe_allow_html=True)
-
+#
 st.set_page_config(page_title="Finora - Student Budget Manager", layout="wide", initial_sidebar_state="expanded")
 
 st.title("💰 Finora - Student Budget Manager")
