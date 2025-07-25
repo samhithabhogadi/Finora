@@ -29,31 +29,31 @@ st.markdown("""
             background-color: #ffffff !important; /* White background behind all text */
         }
         .stButton>button {
-            background-color: #4f8df7; /* Keep button background as is */
+            background-color:  #ffffff ; /* Keep button background as is */
             color: #ffffff !important; /* White text for buttons */
             border-radius: 8px;
             border: none;
             padding: 8px 16px;
         }
         .stTextInput>div>div>input {
-            background-color: #000000 !important; /* White background for text input */
+            background-color:  #ffffff !important; /* White background for text input */
             color: #000000 !important; /* Black text for input */
         }
         .stSelectbox>div>div>div>div {
-            background-color: #000000!important; /* White background for selectbox */
-            color: #000000 !important; /* Black text for selectbox */
+            background-color:  #ffffff important; /* White background for selectbox */
+            color:  #ffffff !important; /* Black text for selectbox */
         }
         .stMetricLabel, .stMetricValue {
-            background-color: #000000 !important; /* White background for metrics */
-            color: #000000 !important; /* Black text for metrics */
+            background-color:  #ffffff !important; /* White background for metrics */
+            color:  #ffffff !important; /* Black text for metrics */
         }
         .stDataFrame {
-            background-color:#000000 !important; /* White background for dataframe */
-            color: #000000 !important; /* Black text for dataframe */
+            background-color: #ffffff !important; /* White background for dataframe */
+            color:  #ffffff !important; /* Black text for dataframe */
         }
         .stExpander {
-            background-color: #000000!important; /* White background for expander */
-            color: #000000 !important; /* Black text for expander */
+            background-color:  #ffffff!important; /* White background for expander */
+            color:  #ffffff !important; /* Black text for expander */
         }
     </style>
 """, unsafe_allow_html=True)
