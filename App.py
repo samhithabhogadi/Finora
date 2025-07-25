@@ -56,6 +56,15 @@ if 'data' not in st.session_state:
 # Navigation
 menu = st.sidebar.radio("Navigation", ["Dashboard", "Add Entry", "Financial Education"])
 
+import os
+
+if os.path.exists('user_data.csv'):
+    st.session_state['data'] = pd.read_csv('user_data.csv', parse_dates=['Date'])
+else:
+    st.session_state['data'] = pd.DataFrame(columns=['Type', 'Amount', 'Category', 'Date'])
+
+menu = st.sidebar.radio("Navigation", ["Dashboard", "Add Entry", "Financial Education"])
+
 # Add Entry
 if menu == "Add Entry":
     st.subheader("➕ Add Income or Expense")
@@ -112,6 +121,23 @@ elif menu == "Dashboard":
             ax.pie(pie_data, labels=pie_data.index, autopct='%1.1f%%')
             ax.axis('equal')
             st.pyplot(fig)
+
+ st.markdown("### 💡 Investment Suggestions")
+        if balance > 500:
+            st.success("You have a surplus! Here are personalized investment ideas:")
+            st.markdown("""
+            **Recommended Allocation:**
+            - 💼 SIP (Mutual Fund): ₹{:.0f}
+              - Example: Axis Bluechip Fund - suitable for long-term growth
+            - 🏦 Fixed Deposit (FD): ₹{:.0f}
+              - Example: HDFC FD at 7% for 1 year
+            - 📱 Emergency Savings (UPI Wallet / RD): ₹{:.0f}
+              - Keep liquid funds for small emergencies
+            """.format(balance * 0.5, balance * 0.3, balance * 0.2))
+        else:
+            st.info("Try to reduce expenses or increase income to have an investable surplus.")
+            st.info("Try to reduce expenses or increase income to have an investable surplus.")
+
 
 # Financial Education
 elif menu == "Financial Education":
