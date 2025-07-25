@@ -25,8 +25,8 @@ st.markdown("""
             color: #000000 !important; /* Black text for sidebar */
         }
         h1, h2, h3, h4, h5, h6, p, span, div {
-            color: #000000 !important; /* Black text for all text elements */
-            background-color: #ffffff !important; /* White background behind all text */
+            color: #ffffff!important; /* Black text for all text elements */
+            background-color:#000000 !important; /* White background behind all text */
         }
         .stButton>button {
             background-color: #ffffff; /* Keep button background as is */
