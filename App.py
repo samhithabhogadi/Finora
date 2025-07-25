@@ -2,7 +2,7 @@
 import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
-from datetime import datetime
+from datetime import datetime, date
 import yfinance as yf
 
 # Initialize theme toggle
@@ -43,20 +43,10 @@ st.markdown(f"""
     </style>
 """, unsafe_allow_html=True)
 
-
-#
 st.set_page_config(page_title="Finora - Student Budget Manager", layout="wide", initial_sidebar_state="expanded")
 
 st.title("💰 Finora - Student Budget Manager")
 st.markdown("A simple app to track your income and expenses and learn about money management.")
-
-if 'data' not in st.session_state:
-    st.session_state['data'] = pd.DataFrame(columns=['Type', 'Amount', 'Category', 'Date'])
-
-
-
-# Navigation
-menu = st.sidebar.radio("Navigation", ["Dashboard", "Add Entry", "Financial Education"])
 
 import os
 
@@ -65,22 +55,21 @@ if os.path.exists('user_data.csv'):
 else:
     st.session_state['data'] = pd.DataFrame(columns=['Type', 'Amount', 'Category', 'Date'])
 
+menu = st.sidebar.radio("Navigation", ["Dashboard", "Add Entry", "Financial Education"])
 
-
-# Add Entry
 if menu == "Add Entry":
     st.subheader("➕ Add Income or Expense")
     entry_type = st.selectbox("Type", ["Income", "Expense"])
     amount = st.number_input("Amount", min_value=0.0, step=10.0)
     category = st.text_input("Category")
-    date = st.date_input("Date", datetime.today())
+    entry_date = st.date_input("Date", value=datetime.today().date())
     if st.button("Add Entry"):
-        new_entry = pd.DataFrame([[entry_type, amount, category, pd.to_datetime(date)]],
+        new_entry = pd.DataFrame([[entry_type, amount, category, pd.to_datetime(entry_date)]],
                                   columns=['Type', 'Amount', 'Category', 'Date'])
         st.session_state['data'] = pd.concat([st.session_state['data'], new_entry], ignore_index=True)
-        st.success("Entry added successfully!")
+        st.session_state['data'].to_csv('user_data.csv', index=False)
+        st.success("Entry added and saved successfully!")
 
-# Dashboard
 elif menu == "Dashboard":
     st.subheader("📊 Dashboard")
     data = st.session_state['data']
@@ -104,7 +93,8 @@ elif menu == "Dashboard":
         with col1:
             st.metric("💸 Current Month Income", f"₹{income_cur:.2f}")
             st.metric("📉 Current Month Expenses", f"₹{expense_cur:.2f}")
-            st.metric("🪙 Balance", f"₹{income_cur - expense_cur:.2f}")
+            balance = income_cur - expense_cur
+            st.metric("🪙 Balance", f"₹{balance:.2f}")
 
         with col2:
             st.metric("🗓️ Last Month Income", f"₹{income_last:.2f}")
@@ -124,6 +114,9 @@ elif menu == "Dashboard":
             ax.axis('equal')
             st.pyplot(fig)
 
+        st.markdown("### 📋 Full Data")
+        st.dataframe(data[['Date', 'Type', 'Category', 'Amount']].sort_values(by='Date', ascending=False))
+
         st.markdown("### 💡 Investment Suggestions")
         if balance > 500:
             st.success("You have a surplus! Here are personalized investment ideas:")
@@ -138,10 +131,7 @@ elif menu == "Dashboard":
             """.format(balance * 0.5, balance * 0.3, balance * 0.2))
         else:
             st.info("Try to reduce expenses or increase income to have an investable surplus.")
-            st.info("Try to reduce expenses or increase income to have an investable surplus.")
 
-
-# Financial Education
 elif menu == "Financial Education":
     st.subheader("📚 Financial Education")
     st.markdown("### 🧠 Tips & Tricks")
