@@ -4,35 +4,48 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from datetime import datetime, date
 import yfinance as yf
+import os
 
 st.set_page_config(page_title="Finora - Student Budget Manager", layout="wide", initial_sidebar_state="expanded")
 
-# Apply light mode styles
+# Apply full light mode styles with modern colors
 st.markdown("""
     <style>
         html, body, [class*="css"]  {
-            background-color: #ffffff !important;
-            color: #000000 !important;
+            background-color: #f9f9fb !important;
+            color: #1f1f1f !important;
+            font-family: 'Segoe UI', sans-serif;
         }
         .sidebar .sidebar-content {
-            background-color: #f0f2f6 !important;
+            background-color: #eef1f6 !important;
         }
         .stApp {
             background-color: #ffffff;
             color: #000000;
         }
         h1, h2, h3, h4, h5, h6, p, span, div {
-            color: #000000 !important;
+            color: #1f1f1f !important;
+        }
+        .stButton>button {
+            background-color: #4f8df7;
+            color: white;
+            border-radius: 8px;
+            border: none;
+            padding: 8px 16px;
+        }
+        .stTextInput>div>div>input {
+            background-color: #ffffff;
+            color: #000000;
+        }
+        .stSelectbox>div>div>div>div {
+            background-color: #ffffff;
+            color: #000000;
         }
     </style>
 """, unsafe_allow_html=True)
-#
-st.set_page_config(page_title="Finora - Student Budget Manager", layout="wide", initial_sidebar_state="expanded")
 
 st.title("💰 Finora - Student Budget Manager")
 st.markdown("A simple app to track your income and expenses and learn about money management.")
-
-import os
 
 if os.path.exists('user_data.csv'):
     st.session_state['data'] = pd.read_csv('user_data.csv', parse_dates=['Date'])
