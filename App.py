@@ -5,30 +5,43 @@ import matplotlib.pyplot as plt
 from datetime import datetime
 import yfinance as yf
 
-st.set_page_config(page_title="Finora - Student Budget Manager", layout="wide", initial_sidebar_state="expanded")
+# Initialize theme toggle
+if 'dark_mode' not in st.session_state:
+    st.session_state['dark_mode'] = False
 
-st.markdown("""
+# Toggle switch
+mode = st.sidebar.checkbox("🌗 Dark Mode", value=st.session_state['dark_mode'])
+st.session_state['dark_mode'] = mode
+
+# Apply theme styles
+if st.session_state['dark_mode']:
+    bg_color = "#1e1e1e"
+    text_color = "#ffffff"
+else:
+    bg_color = "#f9f9f9"
+    text_color = "#000000"
+
+st.markdown(f"""
     <style>
-    .main {
-        background-color: #f9f9f9;
-    }
-    .sidebar .sidebar-content {
-        background: #f0f0f0;
-    }
-    .css-1v0mbdj.ef3psqc12 {
-        border: 1px solid #ccc;
-        border-radius: 10px;
-        padding: 10px;
-    }
+    .main {{
+        background-color: {bg_color};
+        color: {text_color};
+    }}
+    .sidebar .sidebar-content {{
+        background: {'#333' if mode else '#f0f0f0'};
+        color: {text_color};
+    }}
     </style>
 """, unsafe_allow_html=True)
+
+st.set_page_config(page_title="Finora - Student Budget Manager", layout="wide", initial_sidebar_state="expanded")
 
 st.title("💰 Finora - Student Budget Manager")
 st.markdown("A simple app to track your income and expenses and learn about money management.")
 
-# Session State
 if 'data' not in st.session_state:
     st.session_state['data'] = pd.DataFrame(columns=['Type', 'Amount', 'Category', 'Date'])
+
 
 # Navigation
 menu = st.sidebar.radio("Navigation", ["Dashboard", "Add Entry", "Financial Education"])
