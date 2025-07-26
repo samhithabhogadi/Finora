@@ -41,12 +41,12 @@ if "username" not in st.session_state:
 
 # ----------- Page Functions -----------
 def home():
-    st.title("🔐 Welcome to Finora")
+    st.title("Welcome")
     st.write("A simple app to track your income and expenses and learn about money management.")
     st.info("Use the navigation bar to log in or sign up.")
 
 def login_page():
-    st.title("🔐 Login")
+    st.title("Login")
     login_username = st.text_input("Username", key="login_username")
     login_password = st.text_input("Password", type="password", key="login_password")
     if st.button("Login", key="login_button"):
@@ -61,7 +61,7 @@ def login_page():
             st.error("Incorrect username or password.")
 
 def signup_page():
-    st.title("📝 Sign Up")
+    st.title("Sign Up")
     signup_username = st.text_input("Choose a Username", key="signup_username")
     signup_password = st.text_input("Choose a Password", type="password", key="signup_password")
     if st.button("Create Account", key="signup_button"):
@@ -78,7 +78,7 @@ def signup_page():
             st.rerun()
 
 def dashboard():
-    st.title(f"📊 Dashboard - Welcome, {st.session_state.username}!")
+    st.title(f"Dashboard - Welcome, {st.session_state.username}!")
     st.markdown("Track your income and expenses below.")
     
     # Transaction Input Form
