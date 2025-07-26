@@ -52,7 +52,7 @@ st.markdown("""
             color: #000000 !important; /* Black text for dataframe */
         }
         .stExpander {
-            background-color: #ffffff !important; /* White background for expander */
+            background-color:#000000 !important; /* White background for expander */
             color: #000000 !important; /* Black text for expander */
         }
     </style>
