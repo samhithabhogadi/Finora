@@ -11,7 +11,7 @@ if 'dark_mode' not in st.session_state:
 
 
 
- elif menu == "Dashboard":
+        elif menu == "Dashboard":
         st.header("📊 Dashboard")
 
         # Budget Goal Tracker
