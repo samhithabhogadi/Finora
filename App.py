@@ -17,60 +17,21 @@ if not os.path.exists("users.csv"):
 
 users_df = pd.read_csv("users.csv")
 
-if "authenticated" not in st.session_state:
-    st.session_state.authenticated = False
-if "username" not in st.session_state:
-    st.session_state.username = ""
+# Ensure session state is initialized
+if "auth_mode" not in st.session_state:
+    st.session_state.auth_mode = "Login"  # default
 
-if not st.session_state.authenticated:
-    auth_mode = st.radio("Select Option", ["Login", "Sign Up"])
-    username = st.text_input("Username")
-    password = st.text_input("Password", type="password")
+# Display radio only once, and store it in session state
+auth_mode = st.radio("Select Option", ["Login", "Sign Up"], index=0 if st.session_state.auth_mode == "Login" else 1)
+st.session_state.auth_mode = auth_mode
 
-    if st.button("Submit"):
-        hashed_pwd = hash_password(password)
-        if auth_mode == "Login":
-            if ((users_df.username == username) & (users_df.password == hashed_pwd)).any():
-                st.session_state.authenticated = True
-                st.session_state.username = username
-                st.success("Logged in successfully!")
-            else:
-                st.error("Incorrect username or password.")
-        else:  # Sign Up
-            if username in users_df.username.values:
-                st.warning("Username already exists.")
-            else:
-                new_user = pd.DataFrame([[username, hashed_pwd]], columns=["username", "password"])
-                users_df = pd.concat([users_df, new_user], ignore_index=True)
-                users_df.to_csv("users.csv", index=False)
-                st.success("Sign up successful! Please log in.")
-
-if not st.session_state.authenticated:
-    auth_mode = st.radio("Select Option", ["Login", "Sign Up"])
-    username = st.text_input("Username")
-    password = st.text_input("Password", type="password")
-    if st.button("Submit"):
-        if auth_mode == "Login":
-            if ((users_df.username == username) & (users_df.password == password)).any():
-                st.session_state.authenticated = True
-                st.session_state.username = username
-                st.success("Logged in successfully!")
-                st.experimental_rerun()
-            else:
-                st.error("Incorrect username or password.")
-        else:  # Sign Up
-            if username in users_df.username.values:
-                st.warning("Username already exists.")
-            else:
-                users_df = pd.concat(
-                    [users_df, pd.DataFrame([[username, password]], columns=["username", "password"])]
-                ).reset_index(drop=True)
-                users_df.to_csv("users.csv", index=False)
-                st.success("Sign up successful! Redirecting to login...")
-                st.session_state.authenticated = True
-                st.session_state.username = username
-                st.experimental_rerun()
-
+# You can then use the mode like this:
+if st.session_state.auth_mode == "Login":
+    st.subheader("🔐 Login")
+    # Show login form...
+else:
+    st.subheader("📝 Sign Up")
+    # Show signup form...
 
     #
 st.markdown("""
