@@ -91,14 +91,14 @@ def dashboard():
     # Transaction Input Form
     st.subheader("Add Transaction")
     with st.form(key="transaction_form"):
-        date = st.date_input("Date")
+        date_input = st.date_input("Date", value=date.today())
         description = st.text_input("Description")
         amount = st.number_input("Amount", min_value=0.0, format="%.2f")
         trans_type = st.selectbox("Type", ["Income", "Expense"])
         submit = st.form_submit_button("Add Transaction")
     
     if submit:
-        save_transaction(st.session_state.username, date, description, amount, trans_type)
+        save_transaction(st.session_state.username, date_input, description, amount, trans_type)
         st.success("Transaction added!")
     
     # Display Transactions
@@ -119,31 +119,14 @@ def dashboard():
         chart_data = transactions.groupby("type")["amount"].sum().reset_index()
         if not chart_data.empty:
             st.subheader("Spending Summary")
-            chart = {
-                "type": "pie",
-                "data": {
-                    "labels": chart_data["type"].tolist(),
-                    "datasets": [{
-                        "data": chart_data["amount"].tolist(),
-                        "backgroundColor": ["#36A2EB", "#FF6384"],
-                        "hoverOffset": 4
-                    }]
-                },
-                "options": {
-                    "plugins": {
-                        "legend": {
-                            "position": "top"
-                        },
-                        "title": {
-                            "display": True,
-                            "text": "Income vs Expenses"
-                        }
-                    }
-                }
-            }
-            ```chartjs
-            {chart}
-            ```
+            fig = px.pie(
+                chart_data,
+                values="amount",
+                names="type",
+                title="Income vs Expenses",
+                color_discrete_sequence=["#36A2EB", "#FF6384"]
+            )
+            st.plotly_chart(fig, use_container_width=True)
     else:
         st.info("No transactions yet. Add one above!")
 
@@ -152,8 +135,7 @@ if st.session_state.authenticated:
     dashboard()
 else:
     home()
-    
-    #
+ #
 st.markdown("""
     <style>
         /* Global styles */
