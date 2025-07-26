@@ -45,6 +45,33 @@ if not st.session_state.authenticated:
                 users_df.to_csv("users.csv", index=False)
                 st.success("Sign up successful! Please log in.")
 
+if not st.session_state.authenticated:
+    auth_mode = st.radio("Select Option", ["Login", "Sign Up"])
+    username = st.text_input("Username")
+    password = st.text_input("Password", type="password")
+    if st.button("Submit"):
+        if auth_mode == "Login":
+            if ((users_df.username == username) & (users_df.password == password)).any():
+                st.session_state.authenticated = True
+                st.session_state.username = username
+                st.success("Logged in successfully!")
+                st.experimental_rerun()
+            else:
+                st.error("Incorrect username or password.")
+        else:  # Sign Up
+            if username in users_df.username.values:
+                st.warning("Username already exists.")
+            else:
+                users_df = pd.concat(
+                    [users_df, pd.DataFrame([[username, password]], columns=["username", "password"])]
+                ).reset_index(drop=True)
+                users_df.to_csv("users.csv", index=False)
+                st.success("Sign up successful! Redirecting to login...")
+                st.session_state.authenticated = True
+                st.session_state.username = username
+                st.experimental_rerun()
+
+
     #
 st.markdown("""
     <style>
