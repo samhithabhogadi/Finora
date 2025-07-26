@@ -5,158 +5,23 @@ import matplotlib.pyplot as plt
 from datetime import datetime, date
 import yfinance as yf
 import os
-import hashlib
-import plotly.express as px
+# Initialize dark mode in session state
+if 'dark_mode' not in st.session_state:
+    st.session_state['dark_mode'] = False
 
+# Toggle switch in sidebar
+mode = st.sidebar.checkbox("🌗 Dark Mode", value=st.session_state['dark_mode'])
+st.session_state['dark_mode'] = mode
 
-# ----------- Helper Functions -----------
-def hash_password(password):
-    return hashlib.sha256(password.encode()).hexdigest()
-
-def load_users():
-    if not os.path.exists("users.csv"):
-        pd.DataFrame(columns=["username", "password"]).to_csv("users.csv", index=False)
-    return pd.read_csv("users.csv")
-
-def save_user(username, password_hash):
-    users = load_users()
-    users.loc[len(users.index)] = [username, password_hash]
-    users.to_csv("users.csv", index=False)
-
-def load_transactions(username):
-    file_name = f"{username}_transactions.csv"
-    if not os.path.exists(file_name):
-        pd.DataFrame(columns=["date", "description", "amount", "type"]).to_csv(file_name, index=False)
-    return pd.read_csv(file_name)
-
-def save_transaction(username, date, description, amount, trans_type):
-    transactions = load_transactions(username)
-    transactions.loc[len(transactions.index)] = [date, description, amount, trans_type]
-    transactions.to_csv(f"{username}_transactions.csv", index=False)
-
-# ----------- Session Initialization -----------
-if "page" not in st.session_state:
-    st.session_state.page = "home"
-if "authenticated" not in st.session_state:
-    st.session_state.authenticated = False
-if "username" not in st.session_state:
-    st.session_state.username = ""
-if "password_hash" not in st.session_state:
-    st.session_state.password_hash = ""
-
-# ----------- Page Functions -----------
-def home():
-    st.title("Welcome")
-    st.write("A simple app to track your income and expenses and learn about money management.")
-    st.info("Use the navigation bar to log in or sign up.")
-
-def login_page():
-    st.title("Login")
-    login_username = st.text_input("Username", value=st.session_state.username, key="login_username")
-    login_password = st.text_input("Password", type="password", value="", key="login_password")
-    if st.button("Login", key="login_button"):
-        users = load_users()
-        pw_hash = hash_password(login_password)
-        if ((users["username"] == login_username) & (users["password"] == pw_hash)).any():
-            st.session_state.authenticated = True
-            st.session_state.username = login_username
-            st.session_state.password_hash = pw_hash
-            st.session_state.page = "dashboard"
-            st.rerun()
-        else:
-            st.error("Incorrect username or password.")
-
-def signup_page():
-    st.title("Sign Up")
-    signup_username = st.text_input("Choose a Username", key="signup_username")
-    signup_password = st.text_input("Choose a Password", type="password", key="signup_password")
-    if st.button("Create Account", key="signup_button"):
-        users = load_users()
-        if signup_username in users["username"].values:
-            st.warning("Username already exists.")
-        else:
-            pw_hash = hash_password(signup_password)
-            save_user(signup_username, pw_hash)
-            st.success("Signup successful! Logging you in...")
-            st.session_state.authenticated = True
-            st.session_state.username = signup_username
-            st.session_state.password_hash = pw_hash
-            st.session_state.page = "dashboard"
-            st.rerun()
-
-def dashboard():
-    st.title(f"Finora Dashboard - Welcome, {st.session_state.username}!")
-    st.markdown("Track your income and expenses below.")
-    
-    # Transaction Input Form
-    st.subheader("Add Transaction")
-    with st.form(key="transaction_form"):
-        date_input = st.date_input("Date", value=date.today())
-        description = st.text_input("Description")
-        amount = st.number_input("Amount", min_value=0.0, format="%.2f")
-        trans_type = st.selectbox("Type", ["Income", "Expense"])
-        submit = st.form_submit_button("Add Transaction")
-    
-    if submit:
-        save_transaction(st.session_state.username, date_input, description, amount, trans_type)
-        st.success("Transaction added!")
-    
-    # Display Transactions
-    st.subheader("Your Transactions")
-    transactions = load_transactions(st.session_state.username)
-    if not transactions.empty:
-        st.dataframe(transactions)
-        
-        # Calculate Summary
-        total_income = transactions[transactions["type"] == "Income"]["amount"].sum()
-        total_expense = transactions[transactions["type"] == "Expense"]["amount"].sum()
-        balance = total_income - total_expense
-        st.write(f"**Total Income**: ${total_income:.2f}")
-        st.write(f"**Total Expenses**: ${total_expense:.2f}")
-        st.write(f"**Balance**: ${balance:.2f}")
-        
-        # Spending by Type Chart
-        chart_data = transactions.groupby("type")["amount"].sum().reset_index()
-        if not chart_data.empty:
-            st.subheader("Spending Summary")
-            fig = px.pie(
-                chart_data,
-                values="amount",
-                names="type",
-                title="Income vs Expenses",
-                color_discrete_sequence=["#36A2EB", "#FF6384"]
-            )
-            st.plotly_chart(fig, use_container_width=True)
-    else:
-        st.info("No transactions yet. Add one above!")
-
-# ----------- Navigation Bar -----------
-nav_options = ["Home", "Login", "Sign Up"] if not st.session_state.authenticated else ["Dashboard", "Logout"]
-selected_page = st.sidebar.selectbox("Navigate", nav_options)
-
-# ----------- App Router -----------
-if selected_page == "Logout":
-    st.session_state.authenticated = False
-    st.session_state.username = ""
-    st.session_state.password_hash = ""
-    st.session_state.page = "home"
-    st.rerun()
-elif selected_page == "Home":
-    st.session_state.page = "home"
-    home()
-elif selected_page == "Login":
-    st.session_state.page = "login"
-    login_page()
-elif selected_page == "Sign Up":
-    st.session_state.page = "signup"
-    signup_page()
-elif selected_page == "Dashboard":
-    if st.session_state.authenticated:
-        st.session_state.page = "dashboard"
-        dashboard()
-    else:
-        st.session_state.page = "login"
-        login_page()
+# Theme colors
+if st.session_state['dark_mode']:
+    bg_color = "#1e1e1e"  # Black background
+    text_color = "#ffffff"  # White text
+    sidebar_bg = "#2e2e2e"  # Darker sidebar
+else:
+    bg_color = "#ffffff"  # White background
+    text_color = "#000000"  # Black text
+    sidebar_bg = "#f0f2f6"  # Light sidebar
 
  #
 st.markdown("""
