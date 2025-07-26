@@ -32,8 +32,5 @@ pip install -r requirements.txt
 streamlit run finora_budget_app.py
 pip install streamlit-authenticator
 
-from bcrypt import hashpw, gensalt
-password = "password123".encode('utf-8')
-hashed = hashpw(password, gensalt())
-print(hashed.decode('utf-8'))  # Use this value in config.yaml
+
 
