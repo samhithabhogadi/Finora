@@ -7,6 +7,39 @@ import os
 
 st.set_page_config(page_title="Finora - Student Budget Manager", layout="wide", initial_sidebar_state="expanded")
 
+
+# Dummy credentials (use hashed in real apps)
+USERNAME = "admin"
+PASSWORD = "password123"
+
+if "logged_in" not in st.session_state:
+    st.session_state.logged_in = False
+
+def login_screen():
+    st.title("🔐 Login to Finora")
+    username = st.text_input("Username")
+    password = st.text_input("Password", type="password")
+    if st.button("Login"):
+        if username == USERNAME and password == PASSWORD:
+            st.session_state.logged_in = True
+            st.success("Login successful!")
+            st.experimental_rerun()
+        else:
+            st.error("Incorrect username or password.")
+
+def logout_button():
+    if st.sidebar.button("Logout"):
+        st.session_state.logged_in = False
+        st.experimental_rerun()
+
+# If not logged in, show login page
+if not st.session_state.logged_in:
+    login_screen()
+    st.stop()
+else:
+    logout_button()
+#
+
     #
 st.markdown("""
     <style>
