@@ -6,7 +6,7 @@ import yfinance as yf
 import os
 import hashlib
 
-# ---------- Helper Functions ----------
+# ----------- Helper Functions -----------
 def hash_password(password):
     return hashlib.sha256(password.encode()).hexdigest()
 
@@ -20,53 +20,76 @@ def save_user(username, password_hash):
     users.loc[len(users.index)] = [username, password_hash]
     users.to_csv("users.csv", index=False)
 
-# ---------- Session State ----------
+# ----------- Session Initialization -----------
+if "page" not in st.session_state:
+    st.session_state.page = "home"
 if "authenticated" not in st.session_state:
     st.session_state.authenticated = False
 if "username" not in st.session_state:
     st.session_state.username = ""
 
-# ---------- Authentication Page ----------
-def show_login_page():
+# ----------- Page Navigation Buttons -----------
+def home():
     st.title("🔐 Welcome to Finora")
-    mode = st.radio("Select Option", ["Login", "Sign Up"])
+    st.write("Please choose an option to continue:")
+    col1, col2 = st.columns(2)
+    with col1:
+        if st.button("Login"):
+            st.session_state.page = "login"
+    with col2:
+        if st.button("Sign Up"):
+            st.session_state.page = "signup"
+
+def login_page():
+    st.title("🔐 Login")
     username = st.text_input("Username")
     password = st.text_input("Password", type="password")
-
-    if st.button("Submit"):
+    if st.button("Login"):
         users = load_users()
         pw_hash = hash_password(password)
-
-        if mode == "Login":
-            if ((users["username"] == username) & (users["password"] == pw_hash)).any():
-                st.session_state.authenticated = True
-                st.session_state.username = username
-                st.experimental_rerun()
-            else:
-                st.error("Incorrect username or password.")
+        if ((users["username"] == username) & (users["password"] == pw_hash)).any():
+            st.session_state.authenticated = True
+            st.session_state.username = username
+            st.session_state.page = "main"
+            st.experimental_rerun()
         else:
-            if username in users["username"].values:
-                st.warning("Username already exists.")
-            else:
-                save_user(username, pw_hash)
-                st.success("Signup successful! Please log in.")
-                st.experimental_rerun()
+            st.error("Incorrect username or password.")
 
-# ---------- Main Page After Login ----------
-def show_main_page():
+def signup_page():
+    st.title("📝 Sign Up")
+    username = st.text_input("Choose a Username")
+    password = st.text_input("Choose a Password", type="password")
+    if st.button("Create Account"):
+        users = load_users()
+        if username in users["username"].values:
+            st.warning("Username already exists.")
+        else:
+            pw_hash = hash_password(password)
+            save_user(username, pw_hash)
+            st.success("Signup successful! Please log in.")
+            st.session_state.page = "login"
+            st.experimental_rerun()
+
+def main_page():
     st.title("💰 Finora - Student Budget Manager")
     st.markdown("A simple app to track your income and expenses and learn about money management.")
     st.sidebar.success(f"👋 Welcome, {st.session_state.username}")
     if st.sidebar.button("Logout"):
         st.session_state.authenticated = False
         st.session_state.username = ""
+        st.session_state.page = "home"
         st.experimental_rerun()
 
-# ---------- Run App ----------
+# ----------- App Router -----------
 if st.session_state.authenticated:
-    show_main_page()
+    main_page()
 else:
-    show_login_page()
+    if st.session_state.page == "home":
+        home()
+    elif st.session_state.page == "login":
+        login_page()
+    elif st.session_state.page == "signup":
+        signup_page()
     #
 st.markdown("""
     <style>
