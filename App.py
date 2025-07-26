@@ -7,7 +7,7 @@ import yfinance as yf
 import os
 
         # Budget Goal Tracker
-        if 'monthly_budget' not in st.session_state:
+if 'monthly_budget' not in st.session_state:
             st.session_state['monthly_budget'] = 0.0
         budget = st.number_input("Set Monthly Budget (₹)", value=st.session_state['monthly_budget'])
         st.session_state['monthly_budget'] = budget
@@ -23,7 +23,7 @@ import os
         expense_cur = this_month_data[this_month_data['Type'] == 'Expense']['Amount'].sum()
 
         # Alerts
-        if budget and expense_cur > budget:
+if budget and expense_cur > budget:
             st.error("⚠️ You have exceeded your budget!")
         elif budget and expense_cur > 0.9 * budget:
             st.warning("🚨 You're about to reach your monthly budget limit.")
