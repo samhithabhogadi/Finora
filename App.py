@@ -32,6 +32,8 @@ def save_transaction(username, date, description, amount, trans_type):
     transactions.to_csv(f"{username}_transactions.csv", index=False)
 
 # ----------- Session Initialization -----------
+if "page" not in st.session_state:
+    st.session_state.page = "home"
 if "authenticated" not in st.session_state:
     st.session_state.authenticated = False
 if "username" not in st.session_state:
@@ -41,52 +43,43 @@ if "username" not in st.session_state:
 def home():
     st.title("🔐 Welcome to Finora")
     st.write("A simple app to track your income and expenses and learn about money management.")
-    
-    # Create two columns for login and signup
-    col1, col2 = st.columns(2)
-    
-    # Login Section
-    with col1:
-        st.subheader("🔐 Login")
-        login_username = st.text_input("Username", key="login_username")
-        login_password = st.text_input("Password", type="password", key="login_password")
-        if st.button("Login", key="login_button"):
-            users = load_users()
-            pw_hash = hash_password(login_password)
-            if ((users["username"] == login_username) & (users["password"] == pw_hash)).any():
-                st.session_state.authenticated = True
-                st.session_state.username = login_username
-                st.rerun()
-            else:
-                st.error("Incorrect username or password.")
-    
-    # Signup Section
-    with col2:
-        st.subheader("📝 Sign Up")
-        signup_username = st.text_input("Choose a Username", key="signup_username")
-        signup_password = st.text_input("Choose a Password", type="password", key="signup_password")
-        if st.button("Create Account", key="signup_button"):
-            users = load_users()
-            if signup_username in users["username"].values:
-                st.warning("Username already exists.")
-            else:
-                pw_hash = hash_password(signup_password)
-                save_user(signup_username, pw_hash)
-                st.success("Signup successful! Logging you in...")
-                st.session_state.authenticated = True
-                st.session_state.username = signup_username
-                st.rerun()
+    st.info("Use the navigation bar to log in or sign up.")
+
+def login_page():
+    st.title("🔐 Login")
+    login_username = st.text_input("Username", key="login_username")
+    login_password = st.text_input("Password", type="password", key="login_password")
+    if st.button("Login", key="login_button"):
+        users = load_users()
+        pw_hash = hash_password(login_password)
+        if ((users["username"] == login_username) & (users["password"] == pw_hash)).any():
+            st.session_state.authenticated = True
+            st.session_state.username = login_username
+            st.session_state.page = "dashboard"
+            st.rerun()
+        else:
+            st.error("Incorrect username or password.")
+
+def signup_page():
+    st.title("📝 Sign Up")
+    signup_username = st.text_input("Choose a Username", key="signup_username")
+    signup_password = st.text_input("Choose a Password", type="password", key="signup_password")
+    if st.button("Create Account", key="signup_button"):
+        users = load_users()
+        if signup_username in users["username"].values:
+            st.warning("Username already exists.")
+        else:
+            pw_hash = hash_password(signup_password)
+            save_user(signup_username, pw_hash)
+            st.success("Signup successful! Logging you in...")
+            st.session_state.authenticated = True
+            st.session_state.username = signup_username
+            st.session_state.page = "dashboard"
+            st.rerun()
 
 def dashboard():
     st.title(f"📊 Dashboard - Welcome, {st.session_state.username}!")
     st.markdown("Track your income and expenses below.")
-    
-    # Sidebar for logout
-    st.sidebar.success(f"👋 Welcome, {st.session_state.username}")
-    if st.sidebar.button("Logout"):
-        st.session_state.authenticated = False
-        st.session_state.username = ""
-        st.rerun()
     
     # Transaction Input Form
     st.subheader("Add Transaction")
@@ -130,11 +123,32 @@ def dashboard():
     else:
         st.info("No transactions yet. Add one above!")
 
+# ----------- Navigation Bar -----------
+nav_options = ["Home", "Login", "Sign Up"] if not st.session_state.authenticated else ["Dashboard", "Logout"]
+selected_page = st.sidebar.selectbox("Navigate", nav_options)
+
 # ----------- App Router -----------
-if st.session_state.authenticated:
-    dashboard()
-else:
+if selected_page == "Logout":
+    st.session_state.authenticated = False
+    st.session_state.username = ""
+    st.session_state.page = "home"
+    st.rerun()
+elif selected_page == "Home":
+    st.session_state.page = "home"
     home()
+elif selected_page == "Login":
+    st.session_state.page = "login"
+    login_page()
+elif selected_page == "Sign Up":
+    st.session_state.page = "signup"
+    signup_page()
+elif selected_page == "Dashboard":
+    if st.session_state.authenticated:
+        st.session_state.page = "dashboard"
+        dashboard()
+    else:
+        st.session_state.page = "login"
+        login_page()
  #
 st.markdown("""
     <style>
