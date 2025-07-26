@@ -31,7 +31,7 @@ st.markdown("""
 
         /* Buttons */
         .stButton>button {
-            background-color: #00c4cc !important; /* Modern teal color */
+            background-color: #000000 !important; /* Modern teal color */
             color: #ffffff !important; /* White text for contrast */
             border-radius: 8px;
             border: none !important; /* No border */
