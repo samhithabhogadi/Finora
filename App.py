@@ -23,7 +23,7 @@ authenticator = stauth.Authenticate(
     config['pre_authorized']
 )
 
-# Rest of your code...
+# Login widget
 name, authentication_status, username = authenticator.login('Login', 'main')
 
 if authentication_status:
