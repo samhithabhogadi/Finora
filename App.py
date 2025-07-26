@@ -9,7 +9,7 @@ with open('config.yaml') as file:
     config = yaml.load(file, Loader=SafeLoader)
 
 # Validate required keys
-required_keys = ['credentials', 'cookie', 'pre_authorized']
+required_keys = ['credentials', 'cookie']
 for key in required_keys:
     if key not in config:
         st.error(f"Missing required key '{key}' in config.yaml")
@@ -19,8 +19,8 @@ authenticator = stauth.Authenticate(
     config['credentials'],
     config['cookie']['name'],
     config['cookie']['key'],
-    config['cookie']['expiry_days'],
-    config['pre_authorized']
+    config['cookie']['expiry_days']
+    # Removed 'pre_authorized' parameter
 )
 
 # Login widget
