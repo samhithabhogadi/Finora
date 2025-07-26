@@ -8,7 +8,19 @@ import os
 
 st.set_page_config(page_title="Finora - Student Budget Manager", layout="wide", initial_sidebar_state="expanded")
 
-# Replace the existing st.markdown style block with this
+Based on your issue with white text on a white background in the text input fields of your Finora - Student Budget Manager app, and your request for black text with a white text input background, I'll provide an updated version of the st.markdown style block to fix this. The problem likely stems from the text color not being properly applied to the input fields due to overriding styles or missing specificity in the CSS. I'll ensure the text inputs (stTextInput) and selectbox (stSelectbox) have black text (#000000) and a white background (#ffffff), while maintaining the overall light mode theme.
+
+Here’s the corrected st.markdown style block:
+
+python
+
+Collapse
+
+Wrap
+
+Run
+
+Copy
 st.markdown("""
     <style>
         html, body, [class*="css"] {
@@ -38,10 +50,12 @@ st.markdown("""
         .stTextInput>div>div>input {
             background-color: #ffffff !important; /* White background for text input */
             color: #000000 !important; /* Black text for input */
+            border: 1px solid #cccccc; /* Optional: Add a subtle border for visibility */
         }
         .stSelectbox>div>div>div>div {
             background-color: #ffffff !important; /* White background for selectbox */
             color: #000000 !important; /* Black text for selectbox */
+            border: 1px solid #cccccc; /* Optional: Add a subtle border for visibility */
         }
         .stMetricLabel, .stMetricValue {
             background-color: #ffffff !important; /* White background for metrics */
@@ -52,8 +66,8 @@ st.markdown("""
             color: #000000 !important; /* Black text for dataframe */
         }
         .stExpander {
-            background-color: #ffffff  !important; /* White background for expander */
-            color: #ffffff !important; /* Black text for expander */
+            background-color: #ffffff !important; /* White background for expander */
+            color: #000000 !important; /* Black text for expander */
         }
     </style>
 """, unsafe_allow_html=True)
