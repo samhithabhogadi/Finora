@@ -6,7 +6,7 @@ import yfinance as yf
 import os
 import hashlib
 
-# --- Helper Functions ---
+# ---------- Helper Functions ----------
 def hash_password(password):
     return hashlib.sha256(password.encode()).hexdigest()
 
@@ -16,19 +16,18 @@ def load_users():
     return pd.read_csv("users.csv")
 
 def save_user(username, password_hash):
-    df = load_users()
-    df = pd.concat([df, pd.DataFrame([[username, password_hash]], columns=["username", "password"])])
-    df.to_csv("users.csv", index=False)
+    users = load_users()
+    users.loc[len(users.index)] = [username, password_hash]
+    users.to_csv("users.csv", index=False)
 
-# --- Session States ---
+# ---------- Session State ----------
 if "authenticated" not in st.session_state:
     st.session_state.authenticated = False
 if "username" not in st.session_state:
     st.session_state.username = ""
 
-# --- Login / Sign Up Page ---
-if not st.session_state.authenticated:
-    st.set_page_config(page_title="Login - Finora", layout="centered")
+# ---------- Authentication Page ----------
+def show_login_page():
     st.title("🔐 Welcome to Finora")
     mode = st.radio("Select Option", ["Login", "Sign Up"])
     username = st.text_input("Username")
@@ -42,7 +41,6 @@ if not st.session_state.authenticated:
             if ((users["username"] == username) & (users["password"] == pw_hash)).any():
                 st.session_state.authenticated = True
                 st.session_state.username = username
-                st.success("Login successful! Redirecting...")
                 st.experimental_rerun()
             else:
                 st.error("Incorrect username or password.")
@@ -54,21 +52,21 @@ if not st.session_state.authenticated:
                 st.success("Signup successful! Please log in.")
                 st.experimental_rerun()
 
-# --- Dashboard (after login) ---
-else:
-    st.set_page_config(page_title="Finora Dashboard", layout="wide")
+# ---------- Main Page After Login ----------
+def show_main_page():
+    st.title("💰 Finora - Student Budget Manager")
+    st.markdown("A simple app to track your income and expenses and learn about money management.")
     st.sidebar.success(f"👋 Welcome, {st.session_state.username}")
     if st.sidebar.button("Logout"):
         st.session_state.authenticated = False
         st.session_state.username = ""
         st.experimental_rerun()
 
-    # Finora Dashboard (like in your screenshot)
-    st.title("💰 Finora - Student Budget Manager")
-    st.markdown("A simple app to track your income and expenses and learn about money management.")
-
-    st.header("📊 Dashboard")
-    st.markdown("No data available. Add income and expenses to see dashboard.")  # Replace with actual dashboard logic
+# ---------- Run App ----------
+if st.session_state.authenticated:
+    show_main_page()
+else:
+    show_login_page()
     #
 st.markdown("""
     <style>
