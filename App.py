@@ -7,20 +7,6 @@ import yfinance as yf
 import os
 
 st.set_page_config(page_title="Finora - Student Budget Manager", layout="wide", initial_sidebar_state="expanded")
-
-Based on your issue with white text on a white background in the text input fields of your Finora - Student Budget Manager app, and your request for black text with a white text input background, I'll provide an updated version of the st.markdown style block to fix this. The problem likely stems from the text color not being properly applied to the input fields due to overriding styles or missing specificity in the CSS. I'll ensure the text inputs (stTextInput) and selectbox (stSelectbox) have black text (#000000) and a white background (#ffffff), while maintaining the overall light mode theme.
-
-Here’s the corrected st.markdown style block:
-
-python
-
-Collapse
-
-Wrap
-
-Run
-
-Copy
 st.markdown("""
     <style>
         html, body, [class*="css"] {
@@ -71,7 +57,6 @@ st.markdown("""
         }
     </style>
 """, unsafe_allow_html=True)
-#
 
 st.title("💰 Finora - Student Budget Manager")
 st.markdown("A simple app to track your income and expenses and learn about money management.")
