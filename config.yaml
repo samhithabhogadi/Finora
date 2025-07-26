@@ -1,0 +1,18 @@
+credentials:
+  usernames:
+    user1:
+      email: user1@example.com
+      name: User One
+      password: $2b$12$QAJ8eU1F4Rs6UGxSTdgiL.uQMDGJYZuP18BSQuLi2FDY8t0i7o0eG  # Hashed password for 'password123'
+    user2:
+      email: user2@example.com
+      name: User Two
+      password: $2b$12$QAJ8eU1F4Rs6UGxSTdgiL.uQMDGJYZuP18BSQuLi2FDY8t0i7o0eG  # Hashed password for 'password123'
+cookie:
+  expiry_days: 30
+  key: some_signature_key  # Replace with a random string for security
+  name: finora_auth
+preauthorized:
+  emails:
+  - user1@example.com
+  - user2@example.com
