@@ -6,39 +6,44 @@ import yfinance as yf
 import os
 
 st.set_page_config(page_title="Finora - Student Budget Manager", layout="wide", initial_sidebar_state="expanded")
+# Authentication system (persistent)
+import hashlib
 
+def hash_password(password):
+    return hashlib.sha256(password.encode()).hexdigest()
 
-# Dummy credentials (use hashed in real apps)
-USERNAME = "admin"
-PASSWORD = "password123"
+if not os.path.exists("users.csv"):
+    pd.DataFrame(columns=["username", "password"]).to_csv("users.csv", index=False)
 
-if "logged_in" not in st.session_state:
-    st.session_state.logged_in = False
+users_df = pd.read_csv("users.csv")
 
-def login_screen():
-    st.title("🔐 Login to Finora")
+if "authenticated" not in st.session_state:
+    st.session_state.authenticated = False
+if "username" not in st.session_state:
+    st.session_state.username = ""
+
+if not st.session_state.authenticated:
+    auth_mode = st.radio("Select Option", ["Login", "Sign Up"])
     username = st.text_input("Username")
     password = st.text_input("Password", type="password")
-    if st.button("Login"):
-        if username == USERNAME and password == PASSWORD:
-            st.session_state.logged_in = True
-            st.success("Login successful!")
-            st.experimental_rerun()
-        else:
-            st.error("Incorrect username or password.")
 
-def logout_button():
-    if st.sidebar.button("Logout"):
-        st.session_state.logged_in = False
-        st.experimental_rerun()
-
-# If not logged in, show login page
-if not st.session_state.logged_in:
-    login_screen()
-    st.stop()
-else:
-    logout_button()
-#
+    if st.button("Submit"):
+        hashed_pwd = hash_password(password)
+        if auth_mode == "Login":
+            if ((users_df.username == username) & (users_df.password == hashed_pwd)).any():
+                st.session_state.authenticated = True
+                st.session_state.username = username
+                st.success("Logged in successfully!")
+            else:
+                st.error("Incorrect username or password.")
+        else:  # Sign Up
+            if username in users_df.username.values:
+                st.warning("Username already exists.")
+            else:
+                new_user = pd.DataFrame([[username, hashed_pwd]], columns=["username", "password"])
+                users_df = pd.concat([users_df, new_user], ignore_index=True)
+                users_df.to_csv("users.csv", index=False)
+                st.success("Sign up successful! Please log in.")
 
     #
 st.markdown("""
