@@ -4,35 +4,63 @@ import matplotlib.pyplot as plt
 from datetime import datetime, date
 import yfinance as yf
 import os
+import hashlib
 
-st.set_page_config(page_title="Finora - Student Budget Manager", layout="wide", initial_sidebar_state="expanded")
-# Authentication system (persistent)
+# Hashing function
+def hash_password(password):
+    return hashlib.sha256(password.encode()).hexdigest()
+
+# Setup user data storage
+if not os.path.exists("users.csv"):
+    pd.DataFrame(columns=["username", "password"]).to_csv("users.csv", index=False)
+
+users_df = pd.read_csv("users.csv")
+
+# Session states
+if "authenticated" not in st.session_state:
+    st.session_state.authenticated = False
+if "username" not in st.session_state:
+    st.session_state.username = ""
+
+# Show Login/Signup Form
 if not st.session_state.authenticated:
+    st.title("🔐 Welcome to Finora")
     auth_mode = st.radio("Select Option", ["Login", "Sign Up"])
     username = st.text_input("Username")
     password = st.text_input("Password", type="password")
+
     if st.button("Submit"):
+        hashed_pw = hash_password(password)
+
         if auth_mode == "Login":
-            if ((users_df.username == username) & (users_df.password == password)).any():
+            if ((users_df["username"] == username) & (users_df["password"] == hashed_pw)).any():
                 st.session_state.authenticated = True
                 st.session_state.username = username
-                st.success("Logged in successfully!")
-                st.experimental_rerun()  # Redirect to dashboard
+                st.success("Login successful!")
+                st.experimental_rerun()
             else:
                 st.error("Incorrect username or password.")
-        else:  # Sign Up
-            if username in users_df.username.values:
+        else:
+            if username in users_df["username"].values:
                 st.warning("Username already exists.")
             else:
                 users_df = pd.concat(
-                    [users_df, pd.DataFrame([[username, password]], columns=["username", "password"])]
+                    [users_df, pd.DataFrame([[username, hashed_pw]], columns=["username", "password"])]
                 ).reset_index(drop=True)
                 users_df.to_csv("users.csv", index=False)
-                st.success("Sign up successful! You are now logged in.")
-                st.session_state.authenticated = True
-                st.session_state.username = username
-                st.experimental_rerun()  # Redirect to dashboard
-    # Show signup form...
+                st.success("Sign up successful! Please log in.")
+                st.experimental_rerun()
+else:
+    st.sidebar.success(f"👋 Welcome, {st.session_state.username}")
+    if st.sidebar.button("Logout"):
+        st.session_state.authenticated = False
+        st.session_state.username = ""
+        st.experimental_rerun()
+
+#
+
+ st.title("📊 Finora Dashboard")
+    st.markdown("This is your main dashboard after logging in. More features can be added here.")
 
     #
 st.markdown("""
