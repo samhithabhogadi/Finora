@@ -8,6 +8,58 @@ import os
 # Initialize dark mode in session state
 if 'dark_mode' not in st.session_state:
     st.session_state['dark_mode'] = False
+
+
+
+ elif menu == "Dashboard":
+        st.header("📊 Dashboard")
+
+        # Budget Goal Tracker
+        if 'monthly_budget' not in st.session_state:
+            st.session_state['monthly_budget'] = 0.0
+        budget = st.number_input("Set Monthly Budget (₹)", value=st.session_state['monthly_budget'])
+        st.session_state['monthly_budget'] = budget
+
+        # Data summary
+        data['Date'] = pd.to_datetime(data['Date'])
+        data['Month'] = data['Date'].dt.to_period('M')
+        income_total = data[data['Type'] == 'Income']['Amount'].sum()
+        expense_total = data[data['Type'] == 'Expense']['Amount'].sum()
+        current_month = pd.Timestamp.today().to_period('M')
+        this_month_data = data[data['Month'] == current_month]
+        income_cur = this_month_data[this_month_data['Type'] == 'Income']['Amount'].sum()
+        expense_cur = this_month_data[this_month_data['Type'] == 'Expense']['Amount'].sum()
+
+        # Alerts
+        if budget and expense_cur > budget:
+            st.error("⚠️ You have exceeded your budget!")
+        elif budget and expense_cur > 0.9 * budget:
+            st.warning("🚨 You're about to reach your monthly budget limit.")
+
+        # Metrics
+        st.metric("💰 Total Income", f"₹{income_total:.2f}")
+        st.metric("💸 Total Expenses", f"₹{expense_total:.2f}")
+        st.metric("📉 Budget Remaining", f"₹{budget - expense_cur:.2f}")
+
+        # Savings Tracker
+        data['Savings'] = data.apply(lambda row: row['Amount'] if row['Type'] == 'Income' else -row['Amount'], axis=1)
+        monthly_savings = data.groupby('Month')['Savings'].sum()
+        st.subheader("📈 Monthly Savings")
+        st.bar_chart(monthly_savings)
+
+        # Stock Watchlist
+        st.subheader("📊 Stock Watchlist")
+        symbols = st.text_input("Enter comma-separated tickers (e.g. AAPL, INFY.NS)", value="AAPL,INFY.NS")
+        tickers = [s.strip() for s in symbols.split(",") if s.strip()]
+        for ticker in tickers:
+            try:
+                stock = yf.Ticker(ticker)
+                price = stock.history(period="1d")['Close'].iloc[-1]
+                st.metric(f"{ticker}", f"₹{price:.2f}")
+            except:
+                st.warning(f"⚠️ Could not fetch data for {ticker}")
+
+
  #
 st.markdown("""
     <style>
