@@ -44,7 +44,7 @@ st.markdown("""
             color: #000000 !important; /* Black text for selectbox */
         }
         .stMetricLabel, .stMetricValue {
-            background-color: #000000  !important; /* White background for metrics */
+            background-color: #ffffff !important; /* White background for metrics */
             color: #000000 !important; /* Black text for metrics */
         }
         .stDataFrame {
@@ -53,7 +53,7 @@ st.markdown("""
         }
         .stExpander {
             background-color: #ffffff  !important; /* White background for expander */
-            color: #000000 !important; /* Black text for expander */
+            color: #ffffff !important; /* Black text for expander */
         }
     </style>
 """, unsafe_allow_html=True)
