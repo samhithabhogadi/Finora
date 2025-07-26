@@ -3,11 +3,16 @@ credentials:
     user1:
       email: user1@example.com
       name: User One
-      password: $2b$12$QAJ8eU1F4Rs6UGxSTdgiL.uQMDGJYZuP18BSQuLi2FDY8t0i7o0eG
+      password: $2b$12$QAJ8eU1F4Rs6UGxSTdgiL.uQMDGJYZuP18BSQuLi2FDY8t0i7o0eG  # Hashed password for 'password123'
+    user2:
+      email: user2@example.com
+      name: User Two
+      password: $2b$12$QAJ8eU1F4Rs6UGxSTdgiL.uQMDGJYZuP18BSQuLi2FDY8t0i7o0eG  # Hashed password for 'password123'
 cookie:
   expiry_days: 30
-  key: some_signature_key_A1B2C3
+  key: some_signature_key_A1B2C3  # Replace with a random string, e.g., os.urandom(32).hex()
   name: finora_auth
-preauthorized:  # Wrong key
+pre_authorized:  # Ensure this key is present
   emails:
     - user1@example.com
+    - user2@example.com
