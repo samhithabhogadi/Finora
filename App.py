@@ -59,7 +59,7 @@ else:
 
 #
 
- st.title("📊 Finora Dashboard")
+    st.title("📊 Finora Dashboard")
     st.markdown("This is your main dashboard after logging in. More features can be added here.")
 
     #
