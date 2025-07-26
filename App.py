@@ -7,53 +7,96 @@ import yfinance as yf
 import os
 
 st.set_page_config(page_title="Finora - Student Budget Manager", layout="wide", initial_sidebar_state="expanded")
+
 st.markdown("""
     <style>
-        html, body, [class*="css"] {
-            background-color: #ffffff !important; /* White background for entire app */
-            color: #000000 !important; /* Black text for all elements */
+        /* Global styles */
+        html, body, [class*="css"], .stApp {
+            background-color: #ffffff !important;
+            color: #000000 !important;
             font-family: 'Segoe UI', sans-serif;
         }
-        .stApp {
-            background-color: #ffffff !important; /* White background for main app area */
-            color: #000000 !important; /* Black text for main app area */
-        }
+
+        /* Sidebar */
         .sidebar .sidebar-content {
-            background-color: #ffffff !important; /* White background for sidebar */
-            color: #000000 !important; /* Black text for sidebar */
+            background-color: #ffffff !important;
+            color: #000000 !important;
         }
-        h1, h2, h3, h4, h5, h6, p, span, div {
-            color: #000000 !important; /* Black text for all text elements */
-            background-color: #ffffff !important; /* White background behind all text */
+
+        /* All text elements */
+        h1, h2, h3, h4, h5, h6, p, span, div, label, .stMarkdown {
+            color: #000000 !important;
+            background-color: #ffffff !important;
         }
+
+        /* Buttons */
         .stButton>button {
-            background-color: #4f8df7; /* Keep button background as is */
-            color: #ffffff !important; /* White text for buttons */
+            background-color: #4f8df7 !important;
+            color: #ffffff !important;
             border-radius: 8px;
             border: none;
             padding: 8px 16px;
         }
-        .stTextInput>div>div>input {
-            background-color: #ffffff !important; /* White background for text input */
-            color: #000000 !important; /* Black text for input */
-            border: 1px solid #cccccc; /* Optional: Add a subtle border for visibility */
+
+        /* Text Input */
+        .stTextInput > div > div > input {
+            background-color: #ffffff !important;
+            color: #000000 !important;
+            border: 1px solid #cccccc !important;
+            caret-color: #000000 !important; /* Ensures cursor is visible */
         }
-        .stSelectbox>div>div>div>div {
-            background-color: #ffffff !important; /* White background for selectbox */
-            color: #000000 !important; /* Black text for selectbox */
-            border: 1px solid #cccccc; /* Optional: Add a subtle border for visibility */
+
+        /* Selectbox */
+        .stSelectbox > div > div > div > div {
+            background-color: #ffffff !important;
+            color: #000000 !important;
+            border: 1px solid #cccccc !important;
+        }
+        .stSelectbox > div > div > div > div > div {
+            background-color: #ffffff !important;
+            color: #000000 !important;
+        }
+
+        /* Metrics */
+        .stMetric > div > div {
+            background-color: #ffffff !important;
+            color: #000000 !important;
         }
         .stMetricLabel, .stMetricValue {
-            background-color: #ffffff !important; /* White background for metrics */
-            color: #000000 !important; /* Black text for metrics */
+            background-color: #ffffff !important;
+            color: #000000 !important;
         }
+
+        /* DataFrame */
         .stDataFrame {
-            background-color: #ffffff !important; /* White background for dataframe */
-            color: #000000 !important; /* Black text for dataframe */
+            background-color: #ffffff !important;
+            color: #000000 !important;
         }
+        .stDataFrame tr, .stDataFrame td, .stDataFrame th {
+            background-color: #ffffff !important;
+            color: #000000 !important;
+        }
+
+        /* Expander */
         .stExpander {
-            background-color: #ffffff !important; /* White background for expander */
-            color: #000000 !important; /* Black text for expander */
+            background-color: #ffffff !important;
+            color: #000000 !important;
+        }
+        .stExpander > div > div {
+            background-color: #ffffff !important;
+            color: #000000 !important;
+        }
+
+        /* Charts (if any) */
+        .stPlotlyChart, .stLineChart, .stAreaChart, .stBarChart {
+            background-color: #ffffff !important;
+            color: #000000 !important;
+        }
+
+        /* Ensure no residual dark themes */
+        * {
+            background-color: #ffffff !important;
+            color: #000000 !important;
         }
     </style>
 """, unsafe_allow_html=True)
