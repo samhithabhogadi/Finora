@@ -1,4 +1,3 @@
-
 import streamlit as st
 import streamlit_authenticator as stauth
 import yaml
@@ -9,15 +8,22 @@ import datetime
 with open('config.yaml') as file:
     config = yaml.load(file, Loader=SafeLoader)
 
+# Validate required keys
+required_keys = ['credentials', 'cookie', 'pre_authorized']
+for key in required_keys:
+    if key not in config:
+        st.error(f"Missing required key '{key}' in config.yaml")
+        st.stop()
+
 authenticator = stauth.Authenticate(
     config['credentials'],
     config['cookie']['name'],
     config['cookie']['key'],
     config['cookie']['expiry_days'],
-    config['pre_authorized']  # Changed from 'preauthorized' to 'pre_authorized'
+    config['pre_authorized']
 )
 
-# Login widget
+# Rest of your code...
 name, authentication_status, username = authenticator.login('Login', 'main')
 
 if authentication_status:
