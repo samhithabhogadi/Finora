@@ -33,4 +33,4 @@ streamlit run finora_budget_app.py
 pip install streamlit-authenticator
 
 
-
+source finora_env/bin/activate
