@@ -7,7 +7,6 @@ import yfinance as yf
 import os
 import hashlib
 
-# ----------- Helper Functions -----------
 def hash_password(password):
     return hashlib.sha256(password.encode()).hexdigest()
 
@@ -22,56 +21,51 @@ def save_user(username, password_hash):
     users.to_csv("users.csv", index=False)
 
 # ----------- Session Initialization -----------
-if "page" not in st.session_state:
-    st.session_state.page = "home"
 if "authenticated" not in st.session_state:
     st.session_state.authenticated = False
 if "username" not in st.session_state:
     st.session_state.username = ""
 
-# ----------- Page Navigation Functions -----------
+# ----------- Page Functions -----------
 def home():
     st.title("🔐 Welcome to Finora")
-    st.write("Please choose an option to continue:")
+    st.write("A simple app to track your income and expenses and learn about money management.")
+    
+    # Create two columns for login and signup
     col1, col2 = st.columns(2)
+    
+    # Login Section
     with col1:
-        if st.button("Login"):
-            st.session_state.page = "login"
-            st.rerun()  # Updated from experimental_rerun
+        st.subheader("🔐 Login")
+        login_username = st.text_input("Username", key="login_username")
+        login_password = st.text_input("Password", type="password", key="login_password")
+        if st.button("Login", key="login_button"):
+            users = load_users()
+            pw_hash = hash_password(login_password)
+            if ((users["username"] == login_username) & (users["password"] == pw_hash)).any():
+                st.session_state.authenticated = True
+                st.session_state.username = login_username
+                st.rerun()
+            else:
+                st.error("Incorrect username or password.")
+    
+    # Signup Section
     with col2:
-        if st.button("Sign Up"):
-            st.session_state.page = "signup"
-            st.rerun()  # Updated from experimental_rerun
-
-def login_page():
-    st.title("🔐 Login")
-    username = st.text_input("Username")
-    password = st.text_input("Password", type="password")
-    if st.button("Login"):
-        users = load_users()
-        pw_hash = hash_password(password)
-        if ((users["username"] == username) & (users["password"] == pw_hash)).any():
-            st.session_state.authenticated = True
-            st.session_state.username = username
-            st.session_state.page = "main"
-            st.rerun()  # Updated from experimental_rerun
-        else:
-            st.error("Incorrect username or password.")
-
-def signup_page():
-    st.title("📝 Sign Up")
-    username = st.text_input("Choose a Username")
-    password = st.text_input("Choose a Password", type="password")
-    if st.button("Create Account"):
-        users = load_users()
-        if username in users["username"].values:
-            st.warning("Username already exists.")
-        else:
-            pw_hash = hash_password(password)
-            save_user(username, pw_hash)
-            st.success("Signup successful! Please log in.")
-            st.session_state.page = "login"
-            st.rerun()  # Updated from experimental_rerun
+        st.subheader("📝 Sign Up")
+        signup_username = st.text_input("Choose a Username", key="signup_username")
+        signup_password = st.text_input("Choose a Password", type="password", key="signup_password")
+        if st.button("Create Account", key="signup_button"):
+            users = load_users()
+            if signup_username in users["username"].values:
+                st.warning("Username already exists.")
+            else:
+                pw_hash = hash_password(signup_password)
+                save_user(signup_username, pw_hash)
+                st.success("Signup successful! Please log in.")
+                # Optionally auto-login after signup
+                st.session_state.authenticated = True
+                st.session_state.username = signup_username
+                st.rerun()
 
 def main_page():
     st.title(f"👋 Welcome, {st.session_state.username}!")
@@ -80,19 +74,13 @@ def main_page():
     if st.sidebar.button("Logout"):
         st.session_state.authenticated = False
         st.session_state.username = ""
-        st.session_state.page = "home"
-        st.rerun()  # Updated from experimental_rerun
+        st.rerun()
 
 # ----------- App Router -----------
 if st.session_state.authenticated:
     main_page()
 else:
-    if st.session_state.page == "home":
-        home()
-    elif st.session_state.page == "login":
-        login_page()
-    elif st.session_state.page == "signup":
-        signup_page()
+    home()
     #
 st.markdown("""
     <style>
