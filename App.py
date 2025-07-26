@@ -6,7 +6,10 @@ from datetime import datetime, date
 import yfinance as yf
 import os
 import hashlib
+import plotly.express as px
 
+
+ ----------- Helper Functions -----------
 def hash_password(password):
     return hashlib.sha256(password.encode()).hexdigest()
 
@@ -38,6 +41,8 @@ if "authenticated" not in st.session_state:
     st.session_state.authenticated = False
 if "username" not in st.session_state:
     st.session_state.username = ""
+if "password_hash" not in st.session_state:
+    st.session_state.password_hash = ""
 
 # ----------- Page Functions -----------
 def home():
@@ -47,14 +52,15 @@ def home():
 
 def login_page():
     st.title("Login")
-    login_username = st.text_input("Username", key="login_username")
-    login_password = st.text_input("Password", type="password", key="login_password")
+    login_username = st.text_input("Username", value=st.session_state.username, key="login_username")
+    login_password = st.text_input("Password", type="password", value="", key="login_password")
     if st.button("Login", key="login_button"):
         users = load_users()
         pw_hash = hash_password(login_password)
         if ((users["username"] == login_username) & (users["password"] == pw_hash)).any():
             st.session_state.authenticated = True
             st.session_state.username = login_username
+            st.session_state.password_hash = pw_hash
             st.session_state.page = "dashboard"
             st.rerun()
         else:
@@ -74,11 +80,12 @@ def signup_page():
             st.success("Signup successful! Logging you in...")
             st.session_state.authenticated = True
             st.session_state.username = signup_username
+            st.session_state.password_hash = pw_hash
             st.session_state.page = "dashboard"
             st.rerun()
 
 def dashboard():
-    st.title(f"Dashboard - Welcome, {st.session_state.username}!")
+    st.title(f"Finora Dashboard - Welcome, {st.session_state.username}!")
     st.markdown("Track your income and expenses below.")
     
     # Transaction Input Form
@@ -131,6 +138,7 @@ selected_page = st.sidebar.selectbox("Navigate", nav_options)
 if selected_page == "Logout":
     st.session_state.authenticated = False
     st.session_state.username = ""
+    st.session_state.password_hash = ""
     st.session_state.page = "home"
     st.rerun()
 elif selected_page == "Home":
@@ -149,6 +157,7 @@ elif selected_page == "Dashboard":
     else:
         st.session_state.page = "login"
         login_page()
+
  #
 st.markdown("""
     <style>
