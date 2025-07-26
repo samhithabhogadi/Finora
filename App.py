@@ -1,54 +1,12 @@
 import streamlit as st
-import streamlit_authenticator as stauth
-import yaml
-from yaml.loader import SafeLoader
-import datetime
+import pandas as pd
+import matplotlib.pyplot as plt
+from datetime import datetime, date
+import yfinance as yf
+import os
 
-# Load configuration
-with open('config.yaml') as file:
-    config = yaml.load(file, Loader=SafeLoader)
+st.set_page_config(page_title="Finora - Student Budget Manager", layout="wide", initial_sidebar_state="expanded")
 
-# Validate required keys
-required_keys = ['credentials', 'cookie']
-for key in required_keys:
-    if key not in config:
-        st.error(f"Missing required key '{key}' in config.yaml")
-        st.stop()
-
-authenticator = stauth.Authenticate(
-    config['credentials'],
-    config['cookie']['name'],
-    config['cookie']['key'],
-    config['cookie']['expiry_days']
-    # Removed 'pre_authorized' parameter
-)
-
-# Login widget
-name, authentication_status, username = authenticator.login('Login', 'main')
-
-if authentication_status:
-    authenticator.logout('Logout', 'main')
-    st.sidebar.success(f'Welcome *{name}*')
-
-    # App title and description
-    st.title('Finora - Student Budget Manager')
-    st.write('A simple app to track your income and expenses and learn about money management.')
-
-    # Add Income or Expense section
-    st.write('### + Add Income or Expense')
-    type = st.selectbox('Type', ['Income', 'Expense'])
-    amount = st.number_input('Amount', min_value=0.0, step=0.01)
-    category = st.text_input('Category')
-    date = st.date_input('Date', datetime.date.today())
-
-    if st.button('Add Entry'):
-        st.success('Entry added successfully!')
-        # Add your logic to save the entry (e.g., to a database or file)
-
-elif authentication_status == False:
-    st.error('Username/password is incorrect')
-elif authentication_status == None:
-    st.warning('Please enter your username and password')
     #
 st.markdown("""
     <style>
