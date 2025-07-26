@@ -5,14 +5,6 @@ import matplotlib.pyplot as plt
 from datetime import datetime, date
 import yfinance as yf
 import os
-# Initialize dark mode in session state
-if 'dark_mode' not in st.session_state:
-    st.session_state['dark_mode'] = False
-
-
-
-        elif menu == "Dashboard":
-        st.header("📊 Dashboard")
 
         # Budget Goal Tracker
         if 'monthly_budget' not in st.session_state:
