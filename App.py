@@ -37,11 +37,11 @@ def home():
     with col1:
         if st.button("Login"):
             st.session_state.page = "login"
-            st.experimental_rerun()
+            st.rerun()  # Updated from experimental_rerun
     with col2:
         if st.button("Sign Up"):
             st.session_state.page = "signup"
-            st.experimental_rerun()
+            st.rerun()  # Updated from experimental_rerun
 
 def login_page():
     st.title("🔐 Login")
@@ -54,7 +54,7 @@ def login_page():
             st.session_state.authenticated = True
             st.session_state.username = username
             st.session_state.page = "main"
-            st.experimental_rerun()
+            st.rerun()  # Updated from experimental_rerun
         else:
             st.error("Incorrect username or password.")
 
@@ -71,7 +71,7 @@ def signup_page():
             save_user(username, pw_hash)
             st.success("Signup successful! Please log in.")
             st.session_state.page = "login"
-            st.experimental_rerun()
+            st.rerun()  # Updated from experimental_rerun
 
 def main_page():
     st.title(f"👋 Welcome, {st.session_state.username}!")
@@ -81,7 +81,7 @@ def main_page():
         st.session_state.authenticated = False
         st.session_state.username = ""
         st.session_state.page = "home"
-        st.experimental_rerun()
+        st.rerun()  # Updated from experimental_rerun
 
 # ----------- App Router -----------
 if st.session_state.authenticated:
