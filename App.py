@@ -31,10 +31,10 @@ st.markdown("""
 
         /* Buttons */
         .stButton>button {
-            background-color: #28a745 !important; /* Changed to green for Add Entry */
+            background-color: #00c4cc !important; /* Modern teal color */
             color: #ffffff !important; /* White text for contrast */
             border-radius: 8px;
-            border: none;
+            border: none !important; /* No border */
             padding: 8px 16px;
         }
 
@@ -100,6 +100,7 @@ st.markdown("""
         }
     </style>
 """, unsafe_allow_html=True)
+
 
 st.title("💰 Finora - Student Budget Manager")
 st.markdown("A simple app to track your income and expenses and learn about money management.")
