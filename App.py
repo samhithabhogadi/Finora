@@ -1,3 +1,4 @@
+# finora_budget_app.py
 import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -28,7 +29,7 @@ if "authenticated" not in st.session_state:
 if "username" not in st.session_state:
     st.session_state.username = ""
 
-# ----------- Page Navigation Buttons -----------
+# ----------- Page Navigation Functions -----------
 def home():
     st.title("🔐 Welcome to Finora")
     st.write("Please choose an option to continue:")
@@ -36,9 +37,11 @@ def home():
     with col1:
         if st.button("Login"):
             st.session_state.page = "login"
+            st.experimental_rerun()
     with col2:
         if st.button("Sign Up"):
             st.session_state.page = "signup"
+            st.experimental_rerun()
 
 def login_page():
     st.title("🔐 Login")
@@ -71,7 +74,7 @@ def signup_page():
             st.experimental_rerun()
 
 def main_page():
-    st.title("💰 Finora - Student Budget Manager")
+    st.title(f"👋 Welcome, {st.session_state.username}!")
     st.markdown("A simple app to track your income and expenses and learn about money management.")
     st.sidebar.success(f"👋 Welcome, {st.session_state.username}")
     if st.sidebar.button("Logout"):
