@@ -1,3 +1,4 @@
+
 import streamlit as st
 import streamlit_authenticator as stauth
 import yaml
@@ -13,7 +14,7 @@ authenticator = stauth.Authenticate(
     config['cookie']['name'],
     config['cookie']['key'],
     config['cookie']['expiry_days'],
-    config['preauthorized']
+    config['pre_authorized']  # Changed from 'preauthorized' to 'pre_authorized'
 )
 
 # Login widget
@@ -36,7 +37,6 @@ if authentication_status:
 
     if st.button('Add Entry'):
         st.success('Entry added successfully!')
-        
         # Add your logic to save the entry (e.g., to a database or file)
 
 elif authentication_status == False:
