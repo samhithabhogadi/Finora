@@ -31,8 +31,8 @@ st.markdown("""
 
         /* Buttons */
         .stButton>button {
-            background-color: #4f8df7 !important;
-            color: #ffffff !important;
+            background-color: #28a745 !important; /* Changed to green for Add Entry */
+            color: #ffffff !important; /* White text for contrast */
             border-radius: 8px;
             border: none;
             padding: 8px 16px;
