@@ -6,62 +6,69 @@ import yfinance as yf
 import os
 import hashlib
 
-# Hashing function
+# --- Helper Functions ---
 def hash_password(password):
     return hashlib.sha256(password.encode()).hexdigest()
 
-# Setup user data storage
-if not os.path.exists("users.csv"):
-    pd.DataFrame(columns=["username", "password"]).to_csv("users.csv", index=False)
+def load_users():
+    if not os.path.exists("users.csv"):
+        pd.DataFrame(columns=["username", "password"]).to_csv("users.csv", index=False)
+    return pd.read_csv("users.csv")
 
-users_df = pd.read_csv("users.csv")
+def save_user(username, password_hash):
+    df = load_users()
+    df = pd.concat([df, pd.DataFrame([[username, password_hash]], columns=["username", "password"])])
+    df.to_csv("users.csv", index=False)
 
-# Session states
+# --- Session States ---
 if "authenticated" not in st.session_state:
     st.session_state.authenticated = False
 if "username" not in st.session_state:
     st.session_state.username = ""
 
-# Show Login/Signup Form
+# --- Login / Sign Up Page ---
 if not st.session_state.authenticated:
+    st.set_page_config(page_title="Login - Finora", layout="centered")
     st.title("🔐 Welcome to Finora")
-    auth_mode = st.radio("Select Option", ["Login", "Sign Up"])
+    mode = st.radio("Select Option", ["Login", "Sign Up"])
     username = st.text_input("Username")
     password = st.text_input("Password", type="password")
 
     if st.button("Submit"):
-        hashed_pw = hash_password(password)
+        users = load_users()
+        pw_hash = hash_password(password)
 
-        if auth_mode == "Login":
-            if ((users_df["username"] == username) & (users_df["password"] == hashed_pw)).any():
+        if mode == "Login":
+            if ((users["username"] == username) & (users["password"] == pw_hash)).any():
                 st.session_state.authenticated = True
                 st.session_state.username = username
-                st.success("Login successful!")
+                st.success("Login successful! Redirecting...")
                 st.experimental_rerun()
             else:
                 st.error("Incorrect username or password.")
         else:
-            if username in users_df["username"].values:
+            if username in users["username"].values:
                 st.warning("Username already exists.")
             else:
-                users_df = pd.concat(
-                    [users_df, pd.DataFrame([[username, hashed_pw]], columns=["username", "password"])]
-                ).reset_index(drop=True)
-                users_df.to_csv("users.csv", index=False)
-                st.success("Sign up successful! Please log in.")
+                save_user(username, pw_hash)
+                st.success("Signup successful! Please log in.")
                 st.experimental_rerun()
+
+# --- Dashboard (after login) ---
 else:
+    st.set_page_config(page_title="Finora Dashboard", layout="wide")
     st.sidebar.success(f"👋 Welcome, {st.session_state.username}")
     if st.sidebar.button("Logout"):
         st.session_state.authenticated = False
         st.session_state.username = ""
         st.experimental_rerun()
 
-#
+    # Finora Dashboard (like in your screenshot)
+    st.title("💰 Finora - Student Budget Manager")
+    st.markdown("A simple app to track your income and expenses and learn about money management.")
 
-    st.title("📊 Finora Dashboard")
-    st.markdown("This is your main dashboard after logging in. More features can be added here.")
-
+    st.header("📊 Dashboard")
+    st.markdown("No data available. Add income and expenses to see dashboard.")  # Replace with actual dashboard logic
     #
 st.markdown("""
     <style>
