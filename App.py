@@ -7,136 +7,52 @@ import yfinance as yf
 import os
 st.set_page_config(page_title="Student Budget Manager", layout="centered")
 
-# Initialize session state for user login
-if 'logged_in' not in st.session_state:
-    st.session_state['logged_in'] = False
-if 'username' not in st.session_state:
-    st.session_state['username'] = ''
-
-# File paths for user credentials and data
-CREDENTIAL_FILE = "credentials.csv"
-
-# Load or create credentials file
-if not os.path.exists(CREDENTIAL_FILE):
-    pd.DataFrame(columns=['Username', 'Password']).to_csv(CREDENTIAL_FILE, index=False)
-
-# Navigation
-if not st.session_state['logged_in']:
-    auth_menu = st.sidebar.radio("Login System", ["Sign In", "Sign Up"])
-else:
-    menu = st.sidebar.selectbox("Navigate", ["Dashboard", "Add Entry", "Logout"])
-
-# Sign Up
+# ---------------------- SIGN UP ----------------------
 if not st.session_state['logged_in'] and auth_menu == "Sign Up":
-    st.subheader("✏️ Sign Up")
+    st.subheader("✏️ Create a New Account")
     new_user = st.text_input("Choose a Username")
     new_password = st.text_input("Choose a Password", type='password')
+
     if st.button("Create Account"):
         credentials = pd.read_csv(CREDENTIAL_FILE)
         if new_user in credentials['Username'].values:
-            st.warning("🚫 Username already exists. Try another one.")
+            st.warning("🚫 Username already exists. Try a different one.")
         else:
+            # Add user credentials
             new_cred = pd.DataFrame([{'Username': new_user, 'Password': new_password}])
             credentials = pd.concat([credentials, new_cred], ignore_index=True)
             credentials.to_csv(CREDENTIAL_FILE, index=False)
-            pd.DataFrame(columns=['Date', 'Type', 'Amount', 'Category', 'Notes']).to_csv(f"data_{new_user}.csv", index=False)
-            st.success("✅ Account created! Please sign in.")
 
-# Sign In
+            # Create a blank data file for this user
+            pd.DataFrame(columns=['Date', 'Type', 'Amount', 'Category', 'Notes']).to_csv(f"data_{new_user}.csv", index=False)
+
+            st.success("✅ Account created successfully! Please sign in.")
+            st.info("👈 Switch to Sign In tab in the sidebar to log in.")
+
+# ---------------------- SIGN IN ----------------------
 if not st.session_state['logged_in'] and auth_menu == "Sign In":
-    st.subheader("🔐 Sign In")
+    st.subheader("🔐 Sign In to Your Account")
     username = st.text_input("Username")
     password = st.text_input("Password", type='password')
-    if st.button("Sign In"):
+
+    if st.button("Login"):
         credentials = pd.read_csv(CREDENTIAL_FILE)
-        if ((credentials['Username'] == username) & (credentials['Password'] == password)).any():
+        user_match = (credentials['Username'] == username) & (credentials['Password'] == password)
+
+        if user_match.any():
             st.session_state['logged_in'] = True
             st.session_state['username'] = username
             st.success(f"✅ Welcome, {username}!")
-            st.experimental_rerun()
+            st.rerun()
         else:
-            st.error("❌ Incorrect Username or Password")
+            st.error("❌ Invalid username or password")
 
-# Logout
+# ---------------------- LOGOUT ----------------------
 if st.session_state['logged_in'] and menu == "Logout":
     st.session_state['logged_in'] = False
     st.session_state['username'] = ''
-    st.success("🚪 Logged out successfully!")
-    st.experimental_rerun()
-
-# After login
-if st.session_state['logged_in']:
-    st.title("📊 Student Budget Manager")
-
-    DATA_FILE = f"data_{st.session_state['username']}.csv"
-    if not os.path.exists(DATA_FILE):
-        pd.DataFrame(columns=['Date', 'Type', 'Amount', 'Category', 'Notes']).to_csv(DATA_FILE, index=False)
-
-    data = pd.read_csv(DATA_FILE)
-
-    if menu == "Add Entry":
-        st.subheader("➕ Add Income or Expense")
-        entry_date = st.date_input("Date", value=datetime.date.today())
-        entry_type = st.radio("Type", ["Income", "Expense"])
-        entry_amount = st.number_input("Amount", min_value=0.0, format="%.2f")
-        entry_category = st.text_input("Category")
-        entry_notes = st.text_area("Notes")
-        if st.button("Save Entry"):
-            new_entry = pd.DataFrame({
-                'Date': [entry_date],
-                'Type': [entry_type],
-                'Amount': [entry_amount],
-                'Category': [entry_category],
-                'Notes': [entry_notes]
-            })
-            data = pd.concat([data, new_entry], ignore_index=True)
-            data.to_csv(DATA_FILE, index=False)
-            st.success("✅ Entry saved!")
-
-    elif menu == "Dashboard":
-        st.header("📊 Dashboard")
-
-        if 'monthly_budget' not in st.session_state:
-            st.session_state['monthly_budget'] = 0.0
-        budget = st.number_input("Set Monthly Budget (₹)", value=st.session_state['monthly_budget'])
-        st.session_state['monthly_budget'] = budget
-
-        if data.empty:
-            st.info("👤 No data yet. Start by adding your income or expenses.")
-        else:
-            data['Date'] = pd.to_datetime(data['Date'])
-            data['Month'] = data['Date'].dt.to_period('M')
-            income_total = data[data['Type'] == 'Income']['Amount'].sum()
-            expense_total = data[data['Type'] == 'Expense']['Amount'].sum()
-            current_month = pd.Timestamp.today().to_period('M')
-            this_month_data = data[data['Month'] == current_month]
-            income_cur = this_month_data[this_month_data['Type'] == 'Income']['Amount'].sum()
-            expense_cur = this_month_data[this_month_data['Type'] == 'Expense']['Amount'].sum()
-
-            if budget and expense_cur > budget:
-                st.error("⚠️ You have exceeded your budget!")
-            elif budget and expense_cur > 0.9 * budget:
-                st.warning("🚨 You're about to reach your monthly budget limit.")
-
-            st.metric("💰 Total Income", f"₹{income_total:.2f}")
-            st.metric("💸 Total Expenses", f"₹{expense_total:.2f}")
-            st.metric("📉 Budget Remaining", f"₹{budget - expense_cur:.2f}")
-
-            data['Savings'] = data.apply(lambda row: row['Amount'] if row['Type'] == 'Income' else -row['Amount'], axis=1)
-            monthly_savings = data.groupby('Month')['Savings'].sum()
-            st.subheader("📈 Monthly Savings")
-            st.bar_chart(monthly_savings)
-
-        st.subheader("📊 Stock Watchlist")
-        symbols = st.text_input("Enter comma-separated tickers (e.g. AAPL, INFY.NS)", value="AAPL,INFY.NS")
-        tickers = [s.strip() for s in symbols.split(",") if s.strip()]
-        for ticker in tickers:
-            try:
-                stock = yf.Ticker(ticker)
-                price = stock.history(period="1d")['Close'].iloc[-1]
-                st.metric(f"{ticker}", f"₹{price:.2f}")
-            except:
-                st.warning(f"⚠️ Could not fetch data for {ticker}")
+    st.success("🚪 You have been logged out.")
+    st.rerun()
  #
 st.markdown("""
     <style>
