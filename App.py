@@ -7,6 +7,26 @@ import yfinance as yf
 import os
 st.set_page_config(page_title="Student Budget Manager", layout="centered")
 
+# Define credential file
+CREDENTIAL_FILE = "credentials.csv"
+
+# ----------- Session Initialization -----------
+if 'logged_in' not in st.session_state:
+    st.session_state['logged_in'] = False
+if 'username' not in st.session_state:
+    st.session_state['username'] = ""
+if 'password' not in st.session_state:
+    st.session_state['password'] = ""
+
+# Initialize or load credentials
+if not os.path.exists(CREDENTIAL_FILE):
+    pd.DataFrame(columns=['Username', 'Password']).to_csv(CREDENTIAL_FILE, index=False)
+credentials = pd.read_csv(CREDENTIAL_FILE)
+
+# ----------- Navigation and Authentication Menu -----------
+auth_menu = st.sidebar.radio("Authentication", ["Sign In", "Sign Up"]) if not st.session_state['logged_in'] else None
+menu = st.sidebar.radio("Navigation", ["Dashboard", "Add Entry", "Financial Education", "Logout"]) if st.session_state['logged_in'] else None
+
 # ---------------------- SIGN UP ----------------------
 if not st.session_state['logged_in'] and auth_menu == "Sign Up":
     st.subheader("✏️ Create a New Account")
@@ -14,11 +34,9 @@ if not st.session_state['logged_in'] and auth_menu == "Sign Up":
     new_password = st.text_input("Choose a Password", type='password')
 
     if st.button("Create Account"):
-        credentials = pd.read_csv(CREDENTIAL_FILE)
         if new_user in credentials['Username'].values:
             st.warning("🚫 Username already exists. Try a different one.")
         else:
-            # Add user credentials
             new_cred = pd.DataFrame([{'Username': new_user, 'Password': new_password}])
             credentials = pd.concat([credentials, new_cred], ignore_index=True)
             credentials.to_csv(CREDENTIAL_FILE, index=False)
@@ -26,23 +44,25 @@ if not st.session_state['logged_in'] and auth_menu == "Sign Up":
             # Create a blank data file for this user
             pd.DataFrame(columns=['Date', 'Type', 'Amount', 'Category', 'Notes']).to_csv(f"data_{new_user}.csv", index=False)
 
-            st.success("✅ Account created successfully! Please sign in.")
-            st.info("👈 Switch to Sign In tab in the sidebar to log in.")
+            st.session_state['logged_in'] = True
+            st.session_state['username'] = new_user
+            st.session_state['password'] = new_password
+            st.success("✅ Account created successfully! Redirecting to Dashboard...")
+            st.rerun()
 
 # ---------------------- SIGN IN ----------------------
 if not st.session_state['logged_in'] and auth_menu == "Sign In":
     st.subheader("🔐 Sign In to Your Account")
-    username = st.text_input("Username")
-    password = st.text_input("Password", type='password')
+    username = st.text_input("Username", value=st.session_state['username'])
+    password = st.text_input("Password", type='password', value=st.session_state['password'])
 
     if st.button("Login"):
-        credentials = pd.read_csv(CREDENTIAL_FILE)
         user_match = (credentials['Username'] == username) & (credentials['Password'] == password)
-
         if user_match.any():
             st.session_state['logged_in'] = True
             st.session_state['username'] = username
-            st.success(f"✅ Welcome, {username}!")
+            st.session_state['password'] = password
+            st.success(f"✅ Welcome, {username}! Redirecting to Dashboard...")
             st.rerun()
         else:
             st.error("❌ Invalid username or password")
@@ -51,6 +71,7 @@ if not st.session_state['logged_in'] and auth_menu == "Sign In":
 if st.session_state['logged_in'] and menu == "Logout":
     st.session_state['logged_in'] = False
     st.session_state['username'] = ''
+    st.session_state['password'] = ''
     st.success("🚪 You have been logged out.")
     st.rerun()
  #
