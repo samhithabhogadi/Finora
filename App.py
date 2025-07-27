@@ -6,6 +6,90 @@ from datetime import datetime, date
 import yfinance as yf
 import os
 
+# Initialize session state for user login
+if 'logged_in' not in st.session_state:
+    st.session_state['logged_in'] = False
+if 'username' not in st.session_state:
+    st.session_state['username'] = ''
+
+# File paths for user credentials and data
+CREDENTIAL_FILE = "credentials.csv"
+
+# Load or create credentials file
+if not os.path.exists(CREDENTIAL_FILE):
+    pd.DataFrame(columns=['Username', 'Password']).to_csv(CREDENTIAL_FILE, index=False)
+
+# User authentication section
+menu = st.sidebar.selectbox("Navigate", ["Login", "Sign Up"] if not st.session_state['logged_in'] else ["Dashboard", "Add Entry", "Logout"])
+
+# Sign Up page
+if menu == "Sign Up" and not st.session_state['logged_in']:
+    st.subheader("✏️ Sign Up")
+    new_user = st.text_input("Choose a Username")
+    new_password = st.text_input("Choose a Password", type='password')
+    if st.button("Create Account"):
+        credentials = pd.read_csv(CREDENTIAL_FILE)
+        if new_user in credentials['Username'].values:
+            st.warning("🚫 Username already exists. Try another one.")
+        else:
+            credentials = credentials.append({'Username': new_user, 'Password': new_password}, ignore_index=True)
+            credentials.to_csv(CREDENTIAL_FILE, index=False)
+            # Create empty data file for new user
+            pd.DataFrame(columns=['Date', 'Type', 'Amount', 'Category', 'Notes']).to_csv(f"data_{new_user}.csv", index=False)
+            st.success("✅ Account created! Please login.")
+
+# Login page
+elif menu == "Login" and not st.session_state['logged_in']:
+    st.subheader("🔐 Login")
+    username = st.text_input("Username")
+    password = st.text_input("Password", type='password')
+    if st.button("Login"):
+        credentials = pd.read_csv(CREDENTIAL_FILE)
+        if ((credentials['Username'] == username) & (credentials['Password'] == password)).any():
+            st.session_state['logged_in'] = True
+            st.session_state['username'] = username
+            st.success(f"✅ Welcome, {username}!")
+            st.experimental_rerun()
+        else:
+            st.error("❌ Incorrect Username or Password")
+
+# Logout
+elif menu == "Logout" and st.session_state['logged_in']:
+    st.session_state['logged_in'] = False
+    st.session_state['username'] = ''
+    st.success("🚪 Logged out successfully!")
+    st.experimental_rerun()
+
+# Only accessible after login
+if st.session_state['logged_in']:
+
+    # Define user-specific data file
+    DATA_FILE = f"data_{st.session_state['username']}.csv"
+    if not os.path.exists(DATA_FILE):
+        pd.DataFrame(columns=['Date', 'Type', 'Amount', 'Category', 'Notes']).to_csv(DATA_FILE, index=False)
+
+    # Load data
+    data = pd.read_csv(DATA_FILE)
+
+    # Add Entry Page
+    if menu == "Add Entry":
+        st.subheader("➕ Add Income or Expense")
+        entry_date = st.date_input("Date", value=datetime.date.today())
+        entry_type = st.radio("Type", ["Income", "Expense"])
+        entry_amount = st.number_input("Amount", min_value=0.0, format="%.2f")
+        entry_category = st.text_input("Category")
+        entry_notes = st.text_area("Notes")
+        if st.button("Save Entry"):
+            new_entry = pd.DataFrame({
+                'Date': [entry_date],
+                'Type': [entry_type],
+                'Amount': [entry_amount],
+                'Category': [entry_category],
+                'Notes': [entry_notes]
+            })
+            data = pd.concat([data, new_entry], ignore_index=True)
+            data.to_csv(DATA_FILE, index=False)
+            st.success("✅ Entry saved!")
  #
 st.markdown("""
     <style>
