@@ -6,6 +6,7 @@ from datetime import datetime, date
 import yfinance as yf
 import os
 import random
+from passlib.hash import pbkdf2_sha256
 
 st.set_page_config(page_title="Student Budget Manager", layout="centered")
 
@@ -108,33 +109,72 @@ st.markdown("""
 # Set page configuration
 st.set_page_config(page_title="Finora - Student Budget Manager", page_icon="💰")
 
-# -------------------- User Login --------------------
+# -------------------- User Authentication --------------------
+def load_users():
+    if os.path.exists('users.csv'):
+        return pd.read_csv('users.csv')
+    return pd.DataFrame(columns=['Username', 'Password'])
+
+def save_user(username, password):
+    users = load_users()
+    hashed_password = pbkdf2_sha256.hash(password)
+    new_user = pd.DataFrame([[username, hashed_password]], columns=['Username', 'Password'])
+    users = pd.concat([users, new_user], ignore_index=True)
+    users.to_csv('users.csv', index=False)
+
+def verify_user(username, password):
+    users = load_users()
+    if username in users['Username'].values:
+        stored_hash = users[users['Username'] == username]['Password'].iloc[0]
+        return pbkdf2_sha256.verify(password, stored_hash)
+    return False
+
 if 'username' not in st.session_state:
     st.title("💰 Finora - Student Budget Manager")
-    username = st.text_input("Enter Username to Start", key="username_input")
-    login_button = st.button("Login")
+    tab1, tab2 = st.tabs(["Login", "Register"])
 
-    if login_button:
-        if username:
-            # Check for existing usernames in user_data.csv
-            if os.path.exists('user_data.csv'):
-                existing_data = pd.read_csv('user_data.csv')
-                if username in existing_data['Username'].values:
+    with tab1:
+        st.subheader("Login")
+        login_username = st.text_input("Username", key="login_username")
+        login_password = st.text_input("Password", type="password", key="login_password")
+        if st.button("Login"):
+            if login_username and login_password:
+                if verify_user(login_username, login_password):
+                    st.session_state['username'] = login_username
+                    st.session_state['goals'] = {}
+                    st.session_state['redeemed_rewards'] = []
+                    st.session_state['emergency_fund_goal'] = 0
+                    st.session_state['check_in_streak'] = 0
+                    st.session_state['last_check_in'] = None
+                    st.session_state['quests_completed'] = []
+                    st.session_state['quiz_score'] = 0
+                    st.success(f"Welcome, {login_username}!")
+                    st.rerun()
+                else:
+                    st.error("Invalid username or password.")
+            else:
+                st.warning("Please enter both username and password.")
+
+    with tab2:
+        st.subheader("Register")
+        reg_username = st.text_input("Choose Username", key="reg_username")
+        reg_password = st.text_input("Choose Password", type="password", key="reg_password")
+        reg_confirm_password = st.text_input("Confirm Password", type="password", key="reg_confirm_password")
+        if st.button("Register"):
+            if reg_username and reg_password and reg_confirm_password:
+                users = load_users()
+                if reg_username in users['Username'].values:
                     st.error("This username is already taken. Please choose a different username.")
-                    st.stop()
-            # Initialize session state for new user
-            st.session_state['username'] = username
-            st.session_state['goals'] = {}  # Monthly budget goals
-            st.session_state['redeemed_rewards'] = []  # Redeemed rewards
-            st.session_state['emergency_fund_goal'] = 0  # Emergency fund goal
-            st.session_state['check_in_streak'] = 0  # Daily check-in streak
-            st.session_state['last_check_in'] = None  # Last check-in date
-            st.session_state['quests_completed'] = []  # Completed quests
-            st.session_state['quiz_score'] = 0  # Weekly quiz score
-            st.success(f"Welcome, {username}!")
-            st.rerun()
-        else:
-            st.warning("Please enter a username before logging in.")
+                elif reg_password != reg_confirm_password:
+                    st.error("Passwords do not match.")
+                elif len(reg_password) < 6:
+                    st.error("Password must be at least 6 characters long.")
+                else:
+                    save_user(reg_username, reg_password)
+                    st.success("Registration successful! Please log in.")
+            else:
+                st.warning("Please fill in all fields.")
+
     st.stop()
 else:
     st.sidebar.success(f"👋 Welcome, {st.session_state['username']}!")
