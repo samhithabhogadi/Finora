@@ -103,29 +103,23 @@ st.markdown("""
 
 st.set_page_config(page_title="Finora - Student Budget Manager", page_icon="💰")
 
-# -------------------- User Login --------------------
 if 'username' not in st.session_state:
+    st.title("💰 Finora - Student Budget Manager")
     username = st.text_input("Enter Username to Start", key="username_input")
-    if st.button("Login"):
+    login_button = st.button("Login")
+
+    if login_button and username:
         st.session_state['username'] = username
-        st.experimental_rerun()
-    st.stop()
+        st.success(f"Welcome, {username}!")
+        st.experimental_rerun()  # Safe because it's triggered on button click
+
+    st.stop()  # Stops rest of app from rendering until logged in
 else:
-    st.sidebar.success(f"Welcome, {st.session_state['username']}!")
+    st.sidebar.success(f"👋 Welcome, {st.session_state['username']}!\")")
     if st.sidebar.button("Logout"):
         del st.session_state['username']
         st.experimental_rerun()
 
-# -------------------- Data Handling --------------------
-if os.path.exists('user_data.csv'):
-    st.session_state['data'] = pd.read_csv('user_data.csv', parse_dates=['Date'])
-else:
-    st.session_state['data'] = pd.DataFrame(columns=['Type', 'Amount', 'Category', 'Date'])
-
-data = st.session_state['data']
-
-# -------------------- Sidebar Navigation --------------------
-menu = st.sidebar.radio("Navigation", ["Dashboard", "Add Entry", "Financial Education"])
 
 # -------------------- Add Entry --------------------
 if menu == "Add Entry":
