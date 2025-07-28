@@ -102,7 +102,6 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 #
-
 # Set page configuration
 st.set_page_config(page_title="Finora - Student Budget Manager", page_icon="💰")
 
@@ -130,9 +129,10 @@ else:
 if os.path.exists('user_data.csv'):
     st.session_state['data'] = pd.read_csv('user_data.csv', parse_dates=['Date'])
     # Validate DataFrame columns
-    if not all(col in st.session_state['data'].columns for col in ['Type', 'Amount', 'Category', 'Date']):
-        st.error("Invalid CSV format. Expected columns: Type, Amount, Category, Date")
-        st.stop()
+    if not all(col in st.session_state['data'].columns for col in ['Username', 'Type', 'Amount', 'Category', 'Date']):
+        # Add Username column if missing, fill with empty string for existing rows
+        st.session_state['data']['Username'] = ''
+        st.session_state['data'].to_csv('user_data.csv', index=False)
     # Ensure Date column is datetime
     if not pd.api.types.is_datetime64_any_dtype(st.session_state['data']['Date']):
         st.session_state['data']['Date'] = pd.to_datetime(st.session_state['data']['Date'], errors='coerce')
@@ -140,9 +140,11 @@ if os.path.exists('user_data.csv'):
             st.error("Some dates in the CSV are invalid. Please ensure all dates are in a valid format.")
             st.stop()
 else:
-    st.session_state['data'] = pd.DataFrame(columns=['Type', 'Amount', 'Category', 'Date'])
+    st.session_state['data'] = pd.DataFrame(columns=['Username', 'Type', 'Amount', 'Category', 'Date'])
 
+# Filter data for the current user
 data = st.session_state['data']
+user_data = data[data['Username'] == st.session_state['username']].copy()
 
 # -------------------- Sidebar Navigation --------------------
 menu = st.sidebar.radio("Navigation", ["Dashboard", "Add Entry", "Financial Education"])
@@ -155,8 +157,8 @@ if menu == "Add Entry":
     category = st.text_input("Category")
     entry_date = st.date_input("Date", value=datetime.today().date())
     if st.button("Add Entry"):
-        new_entry = pd.DataFrame([[entry_type, amount, category, pd.to_datetime(entry_date)]],
-                                 columns=['Type', 'Amount', 'Category', 'Date'])
+        new_entry = pd.DataFrame([[st.session_state['username'], entry_type, amount, category, pd.to_datetime(entry_date)]],
+                                 columns=['Username', 'Type', 'Amount', 'Category', 'Date'])
         st.session_state['data'] = pd.concat([data, new_entry], ignore_index=True)
         st.session_state['data'].to_csv('user_data.csv', index=False)
         st.success("Entry added and saved successfully!")
@@ -164,15 +166,15 @@ if menu == "Add Entry":
 # -------------------- Dashboard --------------------
 elif menu == "Dashboard":
     st.subheader("📊 Dashboard")
-    if data.empty:
+    if user_data.empty:
         st.info("No data available. Add income and expenses to see dashboard.")
     else:
-        data['Month'] = data['Date'].dt.to_period('M')
+        user_data['Month'] = user_data['Date'].dt.to_period('M')
         current_month = pd.Timestamp.now().to_period('M')
         last_month = current_month - 1
 
         def get_summary(month):
-            df = data[data['Month'] == month]
+            df = user_data[user_data['Month'] == month]
             income = df[df['Type'] == 'Income']['Amount'].sum()
             expense = df[df['Type'] == 'Expense']['Amount'].sum()
             return income, expense
@@ -192,11 +194,11 @@ elif menu == "Dashboard":
             st.metric("📈 Growth", f"₹{(income_cur - income_last):.2f}")
 
         st.markdown("### 📌 Monthly Overview")
-        summary = data.groupby(['Month', 'Type'])['Amount'].sum().unstack().fillna(0)
+        summary = user_data.groupby(['Month', 'Type'])['Amount'].sum().unstack().fillna(0)
         st.line_chart(summary)
 
         st.markdown("### 🥧 Expense Breakdown")
-        expense_data = data[(data['Type'] == 'Expense') & (data['Month'] == current_month)]
+        expense_data = user_data[(user_data['Type'] == 'Expense') & (user_data['Month'] == current_month)]
         if not expense_data.empty:
             pie_data = expense_data.groupby('Category')['Amount'].sum()
             if not pie_data.empty:
@@ -210,7 +212,7 @@ elif menu == "Dashboard":
             st.info("No expense data available for the current month.")
 
         st.markdown("### 📋 Full Data")
-        st.dataframe(data[['Date', 'Type', 'Category', 'Amount']].sort_values(by='Date', ascending=False))
+        st.dataframe(user_data[['Date', 'Type', 'Category', 'Amount']].sort_values(by='Date', ascending=False))
 
         st.markdown("### 💡 Investment Suggestions")
         if balance > 500:
@@ -229,8 +231,8 @@ elif menu == "Dashboard":
 
         # -------------------- Gamification --------------------
         st.markdown("### 🏅 Achievements")
-        total_income = data[data['Type'] == 'Income']['Amount'].sum()
-        total_expense = data[data['Type'] == 'Expense']['Amount'].sum()
+        total_income = user_data[user_data['Type'] == 'Income']['Amount'].sum()
+        total_expense = user_data[user_data['Type'] == 'Expense']['Amount'].sum()
         total_saved = total_income - total_expense
 
         if total_saved >= 1000:
@@ -239,15 +241,15 @@ elif menu == "Dashboard":
             st.success("🎯 Smart Saver - Saved ₹5,000")
         if total_saved >= 10000:
             st.success("🏆 Wealth Warrior - Saved ₹10,000")
-        if len(data) >= 10:
+        if len(user_data) >= 10:
             st.info("🗂️ Consistency Champ - 10+ entries logged")
-        if data['Category'].nunique() >= 5:
+        if user_data['Category'].nunique() >= 5:
             st.info("🎨 Diverse Tracker - 5+ unique categories")
 
         st.markdown("### 🔥 Logging Streak")
-        if pd.api.types.is_datetime64_any_dtype(data['Date']):
-            data['DateOnly'] = data['Date'].dt.date
-            unique_days = data['DateOnly'].nunique()
+        if pd.api.types.is_datetime64_any_dtype(user_data['Date']):
+            user_data['DateOnly'] = user_data['Date'].dt.date
+            unique_days = user_data['DateOnly'].nunique()
             st.info(f"📆 You've added entries on **{unique_days}** days!")
             if unique_days >= 3:
                 st.success("🔥 3-Day Streak!")
@@ -264,7 +266,7 @@ elif menu == "Dashboard":
             xp = (income_entries * 5) + (expense_entries * 3)
             return xp
 
-        xp = calculate_xp(data)
+        xp = calculate_xp(user_data)
         level = xp // 100 + 1
         next_level_xp = (level * 100) - xp
         st.markdown(f"### 🎮 Level: {level}")
@@ -301,18 +303,23 @@ st.sidebar.markdown("### 📂 Data Options")
 uploaded_file = st.sidebar.file_uploader("Upload CSV", type="csv")
 if uploaded_file:
     uploaded_data = pd.read_csv(uploaded_file, parse_dates=['Date'])
-    if all(col in uploaded_data.columns for col in ['Type', 'Amount', 'Category', 'Date']):
+    if all(col in uploaded_data.columns for col in ['Username', 'Type', 'Amount', 'Category', 'Date']):
         if pd.api.types.is_datetime64_any_dtype(uploaded_data['Date']):
-            st.session_state['data'] = uploaded_data
-            st.session_state['data'].to_csv('user_data.csv', index=False)
-            st.success("Data uploaded successfully!")
+            # Filter uploaded data for the current user
+            uploaded_data = uploaded_data[uploaded_data['Username'] == st.session_state['username']]
+            if not uploaded_data.empty:
+                # Merge with existing data, keeping only non-user entries from original data
+                non_user_data = data[data['Username'] != st.session_state['username']]
+                st.session_state['data'] = pd.concat([non_user_data, uploaded_data], ignore_index=True)
+                st.session_state['data'].to_csv('user_data.csv', index=False)
+                st.success("Data uploaded successfully for your account!")
+            else:
+                st.error("No data in the uploaded CSV matches your username.")
         else:
             st.error("Date column in uploaded CSV is not in a valid datetime format.")
     else:
-        st.error("Uploaded CSV must contain columns: Type, Amount, Category, Date")
+        st.error("Uploaded CSV must contain columns: Username, Type, Amount, Category, Date")
 
-csv = st.session_state['data'].to_csv(index=False).encode('utf-8')
-st.sidebar.download_button("Download My Data", csv, "my_budget_data.csv", "text/csv")
-
-
-
+# Download only the current user's data
+user_csv = user_data.to_csv(index=False).encode('utf-8')
+st.sidebar.download_button("Download My Data", user_csv, f"{st.session_state['username']}_budget_data.csv", "text/csv")
