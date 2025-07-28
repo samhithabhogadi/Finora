@@ -5,6 +5,8 @@ import matplotlib.pyplot as plt
 from datetime import datetime, date
 import yfinance as yf
 import os
+import random
+
 st.set_page_config(page_title="Student Budget Manager", layout="centered")
 
  #
@@ -114,9 +116,21 @@ if 'username' not in st.session_state:
 
     if login_button:
         if username:
+            # Check for existing usernames in user_data.csv
+            if os.path.exists('user_data.csv'):
+                existing_data = pd.read_csv('user_data.csv')
+                if username in existing_data['Username'].values:
+                    st.error("This username is already taken. Please choose a different username.")
+                    st.stop()
+            # Initialize session state for new user
             st.session_state['username'] = username
-            st.session_state['goals'] = {}  # Initialize goals dictionary
-            st.session_state['redeemed_rewards'] = []  # Initialize redeemed rewards
+            st.session_state['goals'] = {}  # Monthly budget goals
+            st.session_state['redeemed_rewards'] = []  # Redeemed rewards
+            st.session_state['emergency_fund_goal'] = 0  # Emergency fund goal
+            st.session_state['check_in_streak'] = 0  # Daily check-in streak
+            st.session_state['last_check_in'] = None  # Last check-in date
+            st.session_state['quests_completed'] = []  # Completed quests
+            st.session_state['quiz_score'] = 0  # Weekly quiz score
             st.success(f"Welcome, {username}!")
             st.rerun()
         else:
@@ -125,19 +139,16 @@ if 'username' not in st.session_state:
 else:
     st.sidebar.success(f"👋 Welcome, {st.session_state['username']}!")
     if st.sidebar.button("Logout"):
-        del st.session_state['username']
-        del st.session_state['goals']
-        del st.session_state['redeemed_rewards']
+        for key in list(st.session_state.keys()):
+            del st.session_state[key]
         st.rerun()
 
 # -------------------- Data Handling --------------------
 if os.path.exists('user_data.csv'):
     st.session_state['data'] = pd.read_csv('user_data.csv', parse_dates=['Date'])
-    # Validate DataFrame columns
     if not all(col in st.session_state['data'].columns for col in ['Username', 'Type', 'Amount', 'Category', 'Date']):
         st.session_state['data']['Username'] = ''
         st.session_state['data'].to_csv('user_data.csv', index=False)
-    # Ensure Date column is datetime
     if not pd.api.types.is_datetime64_any_dtype(st.session_state['data']['Date']):
         st.session_state['data']['Date'] = pd.to_datetime(st.session_state['data']['Date'], errors='coerce')
         if st.session_state['data']['Date'].isna().any():
@@ -151,39 +162,86 @@ data = st.session_state['data']
 user_data = data[data['Username'] == st.session_state['username']].copy()
 
 # -------------------- Sidebar Navigation --------------------
-menu = st.sidebar.radio("Navigation", ["Dashboard", "Add Entry", "Financial Education", "Set Goals"])
+st.sidebar.markdown("## Main")
+menu = st.sidebar.radio("Navigate", ["Dashboard", "Add Entry", "Set Goals", "Financial Education"],
+                       format_func=lambda x: {
+                           "Dashboard": "📊 Dashboard",
+                           "Add Entry": "➕ Add Entry",
+                           "Set Goals": "🎯 Set Goals",
+                           "Financial Education": "📚 Financial Education"
+                       }[x])
+st.sidebar.markdown("---")
+st.sidebar.markdown("## Data Management")
+st.sidebar.markdown("📂 Upload/Download Data")
+st.sidebar.markdown("---")
+st.sidebar.markdown("## Learning")
+st.sidebar.markdown("🧠 Set goals and learn financial tips!")
 
 # -------------------- Set Goals --------------------
 if menu == "Set Goals":
-    st.subheader("🎯 Set Monthly Budget Goals")
-    st.markdown("Set savings or spending goals to stay on track and earn rewards!")
+    st.subheader("🎯 Set Financial Goals")
+    st.markdown("Set monthly budget or emergency fund goals to earn rewards!")
+    
+    # Monthly Budget Goals
+    st.markdown("### 📅 Monthly Budget Goals")
     goal_type = st.selectbox("Goal Type", ["Savings", "Spending Limit"])
-    goal_amount = st.number_input("Goal Amount (₹)", min_value=0.0, step=100.0)
+    goal_amount = st.number_input("Goal Amount (₹)", min_value=0.0, step=100.0, key="budget_goal")
     goal_month = st.date_input("For Month", value=datetime.today().replace(day=1)).strftime('%Y-%m')
-    if st.button("Set Goal"):
+    if st.button("Set Budget Goal"):
         if goal_amount > 0:
             st.session_state['goals'][goal_month] = {'type': goal_type, 'amount': goal_amount}
             st.success(f"{goal_type} goal of ₹{goal_amount} set for {goal_month}!")
         else:
             st.warning("Please enter a valid goal amount.")
+    
+    # Emergency Fund Goal
+    st.markdown("### 🛡️ Emergency Fund Goal")
+    emergency_goal = st.number_input("Emergency Fund Target (₹)", min_value=0.0, step=500.0, key="emergency_goal")
+    if st.button("Set Emergency Fund Goal"):
+        if emergency_goal > 0:
+            st.session_state['emergency_fund_goal'] = emergency_goal
+            st.success(f"Emergency fund goal set to ₹{emergency_goal}!")
+        else:
+            st.warning("Please enter a valid emergency fund goal.")
 
 # -------------------- Add Entry --------------------
 if menu == "Add Entry":
     st.subheader("➕ Add Income or Expense")
     entry_type = st.selectbox("Type", ["Income", "Expense"])
     amount = st.number_input("Amount", min_value=0.0, step=10.0)
-    category = st.text_input("Category")
+    predefined_categories = ["Food", "Transport", "Entertainment", "Savings", "Education", "Rent", "Utilities", "Clothing", "Health", "Other"]
+    category = st.selectbox("Category", predefined_categories)
+    if category == "Other":
+        custom_category = st.text_input("Enter Custom Category")
+        category = custom_category if custom_category else "Other"
     entry_date = st.date_input("Date", value=datetime.today().date())
     if st.button("Add Entry"):
-        new_entry = pd.DataFrame([[st.session_state['username'], entry_type, amount, category, pd.to_datetime(entry_date)]],
-                                 columns=['Username', 'Type', 'Amount', 'Category', 'Date'])
-        st.session_state['data'] = pd.concat([data, new_entry], ignore_index=True)
-        st.session_state['data'].to_csv('user_data.csv', index=False)
-        st.success("Entry added and saved successfully!")
+        if category == "Other" and not custom_category:
+            st.warning("Please enter a custom category name or select a predefined category.")
+        elif amount <= 0:
+            st.warning("Please enter a valid amount greater than 0.")
+        else:
+            new_entry = pd.DataFrame([[st.session_state['username'], entry_type, amount, category, pd.to_datetime(entry_date)]],
+                                     columns=['Username', 'Type', 'Amount', 'Category', 'Date'])
+            st.session_state['data'] = pd.concat([data, new_entry], ignore_index=True)
+            st.session_state['data'].to_csv('user_data.csv', index=False)
+            st.success("Entry added and saved successfully!")
 
 # -------------------- Dashboard --------------------
 elif menu == "Dashboard":
     st.subheader("📊 Dashboard")
+    
+    # Daily Check-In
+    today = datetime.today().date()
+    if st.session_state['last_check_in'] != today:
+        if st.button("📅 Daily Check-In"):
+            if st.session_state['last_check_in'] and (today - st.session_state['last_check_in']).days == 1:
+                st.session_state['check_in_streak'] += 1
+            else:
+                st.session_state['check_in_streak'] = 1
+            st.session_state['last_check_in'] = today
+            st.success(f"Checked in! Current streak: {st.session_state['check_in_streak']} days")
+    
     if user_data.empty:
         st.info("No data available. Add income and expenses to see dashboard.")
     else:
@@ -253,6 +311,32 @@ elif menu == "Dashboard":
         total_expense = user_data[user_data['Type'] == 'Expense']['Amount'].sum()
         total_saved = total_income - total_expense
 
+        # Financial Quests
+        st.markdown("#### 🗺️ Financial Quests")
+        st.markdown("Complete quests to earn rewards and improve your financial skills!")
+        quests = {
+            "Expense Tracker": {"task": "Log 5 expenses in a week", "xp": 30, "coins": 10},
+            "Savings Starter": {"task": "Save ₹2,000 in a month", "xp": 50, "coins": 20},
+            "Budget Builder": {"task": "Log entries for 10 days", "xp": 40, "coins": 15}
+        }
+        week_start = today - timedelta(days=today.weekday())
+        recent_expenses = user_data[(user_data['Type'] == 'Expense') & (user_data['Date'].dt.date >= week_start)]
+        unique_days = user_data['Date'].dt.date.nunique() if pd.api.types.is_datetime64_any_dtype(user_data['Date']) else 0
+        
+        for quest_name, quest_info in quests.items():
+            if quest_name not in st.session_state['quests_completed']:
+                if quest_name == "Expense Tracker" and len(recent_expenses) >= 5:
+                    st.session_state['quests_completed'].append(quest_name)
+                    st.success(f"🎉 Quest Completed: {quest_name}! Earned {quest_info['xp']} XP and {quest_info['coins']} coins!")
+                elif quest_name == "Savings Starter" and balance >= 2000:
+                    st.session_state['quests_completed'].append(quest_name)
+                    st.success(f"🎉 Quest Completed: {quest_name}! Earned {quest_info['xp']} XP and {quest_info['coins']} coins!")
+                elif quest_name == "Budget Builder" and unique_days >= 10:
+                    st.session_state['quests_completed'].append(quest_name)
+                    st.success(f"🎉 Quest Completed: {quest_name}! Earned {quest_info['xp']} XP and {quest_info['coins']} coins!")
+                else:
+                    st.info(f"Quest: {quest_name} - {quest_info['task']} (Reward: {quest_info['xp']} XP, {quest_info['coins']} coins)")
+
         # Achievements
         st.markdown("#### 🎖️ Achievements")
         st.markdown("Earn badges by managing your finances wisely!")
@@ -310,6 +394,32 @@ elif menu == "Dashboard":
         else:
             st.info("Start adding entries to track your savings streak!")
 
+        # Daily Check-In Streak
+        st.markdown("#### 📅 Daily Check-In Streak")
+        st.markdown("Check in daily to stay on top of your finances!")
+        st.info(f"🔄 Current check-in streak: **{st.session_state['check_in_streak']}** days")
+        if st.session_state['check_in_streak'] >= 3:
+            st.success("🌟 **3-Day Check-In Streak** - Great daily engagement! (Meaning: Regular monitoring keeps you in control.)")
+        if st.session_state['check_in_streak'] >= 7:
+            st.success("🚀 **7-Day Check-In Streak** - Amazing consistency! (Meaning: You're mastering daily financial awareness.)")
+
+        # Emergency Fund Tracker
+        st.markdown("#### 🛡️ Emergency Fund Tracker")
+        st.markdown("Build a safety net for unexpected expenses!")
+        emergency_savings = user_data[(user_data['Type'] == 'Income') & (user_data['Category'].str.lower() == 'savings')]['Amount'].sum()
+        if st.session_state['emergency_fund_goal'] > 0:
+            progress = min(emergency_savings / st.session_state['emergency_fund_goal'], 1.0)
+            st.progress(progress)
+            st.info(f"🛡️ Emergency Fund: ₹{emergency_savings:.2f} / ₹{st.session_state['emergency_fund_goal']:.2f} ({progress*100:.1f}%)")
+            if progress >= 0.25:
+                st.success("🏦 **Quarter Funded** - 25% of emergency fund goal! (Meaning: You're building a safety net.)")
+            if progress >= 0.5:
+                st.success("🏧 **Half Funded** - 50% of emergency fund goal! (Meaning: Your financial security is growing.)")
+            if progress >= 1.0:
+                st.success("🎉 **Fully Funded** - Emergency fund goal achieved! (Meaning: You're prepared for the unexpected.)")
+        else:
+            st.info("Set an emergency fund goal in the 'Set Goals' tab!")
+
         # Budget Goals
         st.markdown("#### 🎯 Budget Goals")
         st.markdown("Achieve your savings or spending goals to earn rewards!")
@@ -329,11 +439,25 @@ elif menu == "Dashboard":
         else:
             st.info("Set a monthly goal in the 'Set Goals' tab to track your progress!")
 
+        # Peer Comparison Rank
+        st.markdown("#### 🏅 Peer Comparison Rank")
+        st.markdown("See how you stack up against other budgeters!")
+        total_users = len(data['Username'].unique()) if not data.empty else 1
+        user_xp = calculate_xp(user_data)  # Defined below
+        peer_xps = [user_xp] + [random.randint(50, 500) for _ in range(total_users - 1)]
+        rank = sum(1 for peer_xp in peer_xps if peer_xp > user_xp) + 1
+        percentile = (1 - rank / total_users) * 100
+        if percentile >= 90:
+            st.success(f"🌟 **Top 10% Budgeter** - Rank {rank}/{total_users}! (Meaning: You're among the best savers!)")
+        elif percentile >= 75:
+            st.success(f"🚀 **Rising Star** - Rank {rank}/{total_users}! (Meaning: Your budgeting skills are shining!)")
+        else:
+            st.info(f"📈 Rank {rank}/{total_users} ({percentile:.1f}% percentile). Keep budgeting to climb the ranks!")
+
         # XP and Levels
         def calculate_xp(data):
             income_entries = data[data['Type'] == 'Income'].shape[0]
             expense_entries = data[data['Type'] == 'Expense'].shape[0]
-            # Additional XP for goals and streaks
             xp = (income_entries * 5) + (expense_entries * 3)
             if current_month_str in st.session_state['goals']:
                 goal = st.session_state['goals'][current_month_str]
@@ -342,11 +466,22 @@ elif menu == "Dashboard":
                 elif goal['type'] == 'Spending Limit' and expense_cur <= goal['amount']:
                     xp += 50
             if unique_days >= 7:
-                xp += 20  # Bonus for 1-week streak
+                xp += 20
             if unique_days >= 30:
-                xp += 50  # Bonus for 1-month streak
+                xp += 50
             if savings_streak >= 2:
-                xp += 30  # Bonus for savings streak
+                xp += 30
+            if st.session_state['check_in_streak'] >= 3:
+                xp += 10
+            if st.session_state['check_in_streak'] >= 7:
+                xp += 20
+            if emergency_savings >= st.session_state['emergency_fund_goal'] * 0.5:
+                xp += 30
+            if emergency_savings >= st.session_state['emergency_fund_goal']:
+                xp += 50
+            for quest_name in st.session_state['quests_completed']:
+                xp += quests[quest_name]['xp']
+            xp += st.session_state['quiz_score'] * 5
             return xp
 
         xp = calculate_xp(user_data)
@@ -357,7 +492,7 @@ elif menu == "Dashboard":
         st.caption(f"⭐ {xp} XP - {next_level_xp} XP to next level (Meaning: Your financial skills are leveling up!)")
 
         # Coins and Redemption
-        coins = xp // 10
+        coins = xp // 10 + sum(quests[quest]['coins'] for quest in st.session_state['quests_completed'])
         st.sidebar.markdown(f"💰 Coins Earned: **{coins}**")
         st.markdown("#### 🏪 Coin Redemption")
         st.markdown("Redeem coins for virtual rewards to enhance your financial knowledge!")
@@ -407,7 +542,7 @@ elif menu == "Financial Education":
 
     st.markdown("### 🗞️ Latest Financial News")
     with st.expander("Click to View"):
-        st.markdown("- Sensex climbs 300 pts; Nifty above 23,500 ahead of Fed decision")
+        st.markdown("- Sensex climbs 300 points; Nifty above 23,500 ahead of Fed decision")
         st.markdown("- Gold prices drop as dollar strengthens on Fed signals")
         st.markdown("- Mutual Fund SIPs hit record ₹18,000 crore in June 2025")
     if "Investment Guide" in st.session_state['redeemed_rewards']:
@@ -418,10 +553,34 @@ elif menu == "Financial Education":
         - 🏦 **Fixed Deposits**: Safe option for guaranteed returns, ideal for students.
         """)
 
+    # Financial Quiz Challenge
+    st.markdown("### 📝 Financial Quiz Challenge")
+    st.markdown("Test your financial knowledge and earn XP!")
+    quiz_questions = [
+        {"question": "What is the 50/30/20 budgeting rule?", "options": ["50% needs, 30% wants, 20% savings", "50% savings, 30% needs, 20% wants", "50% wants, 30% needs, 20% savings"], "correct": 0},
+        {"question": "What is a mutual fund?", "options": ["A single stock", "A diversified investment pool", "A fixed deposit"], "correct": 1},
+        {"question": "Why is an emergency fund important?", "options": ["To buy luxury items", "To cover unexpected expenses", "To invest in stocks"], "correct": 1}
+    ]
+    if st.button("Start Quiz"):
+        st.session_state['quiz_score'] = 0
+        for i, q in enumerate(quiz_questions):
+            st.markdown(f"**Question {i+1}: {q['question']}**")
+            answer = st.radio("Select an answer:", q['options'], key=f"quiz_{i}")
+            if st.button("Submit Answer", key=f"submit_{i}"):
+                if q['options'].index(answer) == q['correct']:
+                    st.session_state['quiz_score'] += 1
+                    st.success("Correct! +1 point")
+                else:
+                    st.error("Incorrect. Try again next time!")
+        st.info(f"Quiz Score: {st.session_state['quiz_score']}/3 (Earned {st.session_state['quiz_score'] * 5} XP)")
+        peer_scores = [st.session_state['quiz_score']] + [random.randint(0, 3) for _ in range(9)]
+        quiz_rank = sum(1 for score in peer_scores if score > st.session_state['quiz_score']) + 1
+        st.metric("Quiz Leaderboard Rank", f"{quiz_rank}/10")
+
 # -------------------- Upload & Download --------------------
-st.sidebar.markdown("### 📂 Data Options")
-uploaded_file = st.sidebar.file_uploader("Upload CSV", type="csv")
-if uploaded_file:
+st.sidebar.file_uploader("Upload CSV", type="csv", key="file_uploader")
+if st.session_state.get('file_uploader'):
+    uploaded_file = st.session_state['file_uploader']
     uploaded_data = pd.read_csv(uploaded_file, parse_dates=['Date'])
     if all(col in uploaded_data.columns for col in ['Username', 'Type', 'Amount', 'Category', 'Date']):
         if pd.api.types.is_datetime64_any_dtype(uploaded_data['Date']):
