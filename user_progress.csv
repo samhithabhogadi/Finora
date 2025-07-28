@@ -1,0 +1,8 @@
+def load_user_progress():
+    if os.path.exists('user_progress.csv'):
+        df = pd.read_csv('user_progress.csv')
+        df['Redeemed_Rewards'] = df['Redeemed_Rewards'].apply(lambda x: eval(x) if pd.notna(x) else [])
+        df['Quests_Completed'] = df['Quests_Completed'].apply(lambda x: eval(x) if pd.notna(x) else [])
+        df['Last_Check_In'] = pd.to_datetime(df['Last_Check_In'], errors='coerce')
+        return df
+    return pd.DataFrame(columns=['Username', 'XP', 'Coins', 'Redeemed_Rewards', 'Check_In_Streak', 'Last_Check_In', 'Quests_Completed', 'Quiz_Score'])
