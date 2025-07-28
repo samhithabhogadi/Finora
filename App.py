@@ -101,6 +101,10 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
+#
+
+
+# Set page configuration
 st.set_page_config(page_title="Finora - Student Budget Manager", page_icon="💰")
 
 # -------------------- User Login --------------------
@@ -113,20 +117,29 @@ if 'username' not in st.session_state:
         if username:
             st.session_state['username'] = username
             st.success(f"Welcome, {username}!")
-            st.experimental_rerun()
+            st.rerun()
         else:
             st.warning("Please enter a username before logging in.")
-
     st.stop()
 else:
     st.sidebar.success(f"👋 Welcome, {st.session_state['username']}!")
     if st.sidebar.button("Logout"):
         del st.session_state['username']
-        st.experimental_rerun()
+        st.rerun()
 
 # -------------------- Data Handling --------------------
 if os.path.exists('user_data.csv'):
     st.session_state['data'] = pd.read_csv('user_data.csv', parse_dates=['Date'])
+    # Validate DataFrame columns
+    if not all(col in st.session_state['data'].columns for col in ['Type', 'Amount', 'Category', 'Date']):
+        st.error("Invalid CSV format. Expected columns: Type, Amount, Category, Date")
+        st.stop()
+    # Ensure Date column is datetime
+    if not pd.api.types.is_datetime64_any_dtype(st.session_state['data']['Date']):
+        st.session_state['data']['Date'] = pd.to_datetime(st.session_state['data']['Date'], errors='coerce')
+        if st.session_state['data']['Date'].isna().any():
+            st.error("Some dates in the CSV are invalid. Please ensure all dates are in a valid format.")
+            st.stop()
 else:
     st.session_state['data'] = pd.DataFrame(columns=['Type', 'Amount', 'Category', 'Date'])
 
@@ -144,7 +157,7 @@ if menu == "Add Entry":
     entry_date = st.date_input("Date", value=datetime.today().date())
     if st.button("Add Entry"):
         new_entry = pd.DataFrame([[entry_type, amount, category, pd.to_datetime(entry_date)]],
-                                  columns=['Type', 'Amount', 'Category', 'Date'])
+                                 columns=['Type', 'Amount', 'Category', 'Date'])
         st.session_state['data'] = pd.concat([data, new_entry], ignore_index=True)
         st.session_state['data'].to_csv('user_data.csv', index=False)
         st.success("Entry added and saved successfully!")
@@ -174,7 +187,6 @@ elif menu == "Dashboard":
             st.metric("💸 Current Month Income", f"₹{income_cur:.2f}")
             st.metric("📉 Current Month Expenses", f"₹{expense_cur:.2f}")
             st.metric("🪙 Balance", f"₹{balance:.2f}")
-
         with col2:
             st.metric("🗓️ Last Month Income", f"₹{income_last:.2f}")
             st.metric("🔻 Last Month Expenses", f"₹{expense_last:.2f}")
@@ -188,10 +200,38 @@ elif menu == "Dashboard":
         expense_data = data[(data['Type'] == 'Expense') & (data['Month'] == current_month)]
         if not expense_data.empty:
             pie_data = expense_data.groupby('Category')['Amount'].sum()
-            fig, ax = plt.subplots()
-            ax.pie(pie_data, labels=pie_data.index, autopct='%1.1f%%')
-            ax.axis('equal')
-            st.pyplot(fig)
+            if not pie_data.empty:
+                ```chartjs
+                {
+                    "type": "pie",
+                    "data": {
+                        "labels": pie_data.index.tolist(),
+                        "datasets": [{
+                            "data": pie_data.values.tolist(),
+                            "backgroundColor": ["#FF6384", "#36A2EB", "#FFCE56", "#4BC0C0", "#9966FF"],
+                            "borderColor": ["#FFFFFF"] * len(pie_data),
+                            "borderWidth": 1
+                        }]
+                    },
+                    "options": {
+                        "responsive": true,
+                        "plugins": {
+                            "legend": {
+                                "position": "top"
+                            },
+                            "tooltip": {
+                                "callbacks": {
+                                    "label": "function(context) { return context.label + ': ₹' + context.parsed.toFixed(2); }"
+                                }
+                            }
+                        }
+                    }
+                }
+                ```
+            else:
+                st.info("No expense data available for the current month.")
+        else:
+            st.info("No expense data available for the current month.")
 
         st.markdown("### 📋 Full Data")
         st.dataframe(data[['Date', 'Type', 'Category', 'Amount']].sort_values(by='Date', ascending=False))
@@ -229,15 +269,18 @@ elif menu == "Dashboard":
             st.info("🎨 Diverse Tracker - 5+ unique categories")
 
         st.markdown("### 🔥 Logging Streak")
-        data['DateOnly'] = data['Date'].dt.date
-        unique_days = data['DateOnly'].nunique()
-        st.info(f"📆 You've added entries on **{unique_days}** days!")
-        if unique_days >= 3:
-            st.success("🔥 3-Day Streak!")
-        if unique_days >= 7:
-            st.success("🚀 1-Week Logging Streak!")
-        if unique_days >= 30:
-            st.success("🌟 1-Month Consistency Hero!")
+        if pd.api.types.is_datetime64_any_dtype(data['Date']):
+            data['DateOnly'] = data['Date'].dt.date
+            unique_days = data['DateOnly'].nunique()
+            st.info(f"📆 You've added entries on **{unique_days}** days!")
+            if unique_days >= 3:
+                st.success("🔥 3-Day Streak!")
+            if unique_days >= 7:
+                st.success("🚀 1-Week Logging Streak!")
+            if unique_days >= 30:
+                st.success("🌟 1-Month Consistency Hero!")
+        else:
+            st.warning("Date column is not in the correct format. Please ensure dates are valid.")
 
         def calculate_xp(data):
             income_entries = data[data['Type'] == 'Income'].shape[0]
@@ -281,8 +324,16 @@ elif menu == "Financial Education":
 st.sidebar.markdown("### 📂 Data Options")
 uploaded_file = st.sidebar.file_uploader("Upload CSV", type="csv")
 if uploaded_file:
-    st.session_state['data'] = pd.read_csv(uploaded_file, parse_dates=['Date'])
-    st.success("Data uploaded successfully!")
+    uploaded_data = pd.read_csv(uploaded_file, parse_dates=['Date'])
+    if all(col in uploaded_data.columns for col in ['Type', 'Amount', 'Category', 'Date']):
+        if pd.api.types.is_datetime64_any_dtype(uploaded_data['Date']):
+            st.session_state['data'] = uploaded_data
+            st.session_state['data'].to_csv('user_data.csv', index=False)
+            st.success("Data uploaded successfully!")
+        else:
+            st.error("Date column in uploaded CSV is not in a valid datetime format.")
+    else:
+        st.error("Uploaded CSV must contain columns: Type, Amount, Category, Date")
 
 csv = st.session_state['data'].to_csv(index=False).encode('utf-8')
 st.sidebar.download_button("Download My Data", csv, "my_budget_data.csv", "text/csv")
