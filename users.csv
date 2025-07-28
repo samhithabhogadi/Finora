@@ -1,1 +1,7 @@
-
+Username,Password
+user1,$pbkdf2-sha256$29000$... (hashed password)
+Username,Type,Amount,Category,Date
+user1,Income,1000,Salary,2025-07-01
+user1,Expense,200,Food,2025-07-02
+user1,Income,500,Savings,2025-07-03
+user2,Expense,300,Rent,2025-07-04
