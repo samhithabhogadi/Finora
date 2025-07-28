@@ -129,6 +129,32 @@ def verify_user(username, password):
         return pbkdf2_sha256.verify(password, stored_hash)
     return False
 
+# -------------------- User Progress Handling --------------------
+def load_user_progress():
+    if os.path.exists('user_progress.csv'):
+        df = pd.read_csv('user_progress.csv')
+        if 'Redeemed_Rewards' in df.columns:
+            df['Redeemed_Rewards'] = df['Redeemed_Rewards'].apply(lambda x: eval(x) if pd.notna(x) else [])
+        if 'Quests_Completed' in df.columns:
+            df['Quests_Completed'] = df['Quests_Completed'].apply(lambda x: eval(x) if pd.notna(x) else [])
+        if 'Last_Check_In' in df.columns:
+            df['Last_Check_In'] = pd.to_datetime(df['Last_Check_In'], errors='coerce')
+        return df
+    return pd.DataFrame(columns=['Username', 'XP', 'Coins', 'Redeemed_Rewards', 'Check_In_Streak', 'Last_Check_In', 'Quests_Completed', 'Quiz_Score'])
+
+def save_user_progress(username, xp, coins, redeemed_rewards, check_in_streak, last_check_in, quests_completed, quiz_score):
+    progress = load_user_progress()
+    if username in progress['Username'].values:
+        progress.loc[progress['Username'] == username, ['XP', 'Coins', 'Redeemed_Rewards', 'Check_In_Streak', 'Last_Check_In', 'Quests_Completed', 'Quiz_Score']] = [
+            xp, coins, str(redeemed_rewards), check_in_streak, last_check_in, str(quests_completed), quiz_score
+        ]
+    else:
+        new_progress = pd.DataFrame([[username, xp, coins, str(redeemed_rewards), check_in_streak, last_check_in, str(quests_completed), quiz_score]],
+                                    columns=['Username', 'XP', 'Coins', 'Redeemed_Rewards', 'Check_In_Streak', 'Last_Check_In', 'Quests_Completed', 'Quiz_Score'])
+        progress = pd.concat([progress, new_progress], ignore_index=True)
+    progress.to_csv('user_progress.csv', index=False)
+
+# -------------------- User Login --------------------
 if 'username' not in st.session_state:
     st.title("💰 Finora - Student Budget Manager")
     tab1, tab2 = st.tabs(["Login", "Register"])
@@ -142,12 +168,25 @@ if 'username' not in st.session_state:
                 if verify_user(login_username, login_password):
                     st.session_state['username'] = login_username
                     st.session_state['goals'] = {}
-                    st.session_state['redeemed_rewards'] = []
-                    st.session_state['emergency_fund_goal'] = 0
-                    st.session_state['check_in_streak'] = 0
-                    st.session_state['last_check_in'] = None
-                    st.session_state['quests_completed'] = []
-                    st.session_state['quiz_score'] = 0
+                    # Load user progress
+                    progress = load_user_progress()
+                    if login_username in progress['Username'].values:
+                        user_row = progress[progress['Username'] == login_username].iloc[0]
+                        st.session_state['xp'] = user_row['XP']
+                        st.session_state['coins'] = user_row['Coins']
+                        st.session_state['redeemed_rewards'] = user_row['Redeemed_Rewards']
+                        st.session_state['check_in_streak'] = user_row['Check_In_Streak']
+                        st.session_state['last_check_in'] = user_row['Last_Check_In']
+                        st.session_state['quests_completed'] = user_row['Quests_Completed']
+                        st.session_state['quiz_score'] = user_row['Quiz_Score']
+                    else:
+                        st.session_state['xp'] = 0
+                        st.session_state['coins'] = 0
+                        st.session_state['redeemed_rewards'] = []
+                        st.session_state['check_in_streak'] = 0
+                        st.session_state['last_check_in'] = None
+                        st.session_state['quests_completed'] = []
+                        st.session_state['quiz_score'] = 0
                     st.success(f"Welcome, {login_username}!")
                     st.rerun()
                 else:
@@ -249,7 +288,7 @@ if menu == "Add Entry":
     st.subheader("➕ Add Income or Expense")
     entry_type = st.selectbox("Type", ["Income", "Expense"])
     amount = st.number_input("Amount", min_value=0.0, step=10.0)
-    predefined_categories = ["Food", "Transport", "Entertainment", "Savings", "Education", "Rent", "Utilities", "Clothing", "Health", "Other"]
+    predefined_categories = ["Food", "Transport", "Entertainment", "Savings", "Education", "Rent", "Utilities", "Clothing", "Health", "Debt Repayment", "Other"]
     category = st.selectbox("Category", predefined_categories)
     if category == "Other":
         custom_category = st.text_input("Enter Custom Category")
@@ -275,13 +314,19 @@ elif menu == "Dashboard":
     today = datetime.today().date()
     if st.session_state['last_check_in'] != today:
         if st.button("📅 Daily Check-In"):
-            if st.session_state['last_check_in'] and (today - st.session_state['last_check_in']).days == 1:
+            if st.session_state['last_check_in'] and (today - pd.Timestamp(st.session_state['last_check_in']).date()).days == 1:
                 st.session_state['check_in_streak'] += 1
             else:
                 st.session_state['check_in_streak'] = 1
             st.session_state['last_check_in'] = today
-            st.success(f"Checked in! Current streak: {st.session_state['check_in_streak']} days")
-    
+            st.session_state['xp'] += 5
+            st.session_state['coins'] += 2
+            save_user_progress(st.session_state['username'], st.session_state['xp'], st.session_state['coins'],
+                              st.session_state['redeemed_rewards'], st.session_state['check_in_streak'],
+                              st.session_state['last_check_in'], st.session_state['quests_completed'],
+                              st.session_state['quiz_score'])
+            st.success(f"Checked in! Current streak: {st.session_state['check_in_streak']} days (+5 XP, +2 Coins)")
+
     if user_data.empty:
         st.info("No data available. Add income and expenses to see dashboard.")
     else:
@@ -357,22 +402,73 @@ elif menu == "Dashboard":
         quests = {
             "Expense Tracker": {"task": "Log 5 expenses in a week", "xp": 30, "coins": 10},
             "Savings Starter": {"task": "Save ₹2,000 in a month", "xp": 50, "coins": 20},
-            "Budget Builder": {"task": "Log entries for 10 days", "xp": 40, "coins": 15}
+            "Budget Builder": {"task": "Log entries for 10 days", "xp": 40, "coins": 15},
+            "Debt Crusher": {"task": "Pay off ₹1,000 in Debt Repayment", "xp": 40, "coins": 15},
+            "Category Explorer": {"task": "Use 3 new categories in a month", "xp": 25, "coins": 10},
+            "Consistency Star": {"task": "Log entries every day for 5 days in a week", "xp": 35, "coins": 12}
         }
         week_start = today - timedelta(days=today.weekday())
         recent_expenses = user_data[(user_data['Type'] == 'Expense') & (user_data['Date'].dt.date >= week_start)]
         unique_days = user_data['Date'].dt.date.nunique() if pd.api.types.is_datetime64_any_dtype(user_data['Date']) else 0
+        debt_payments = user_data[(user_data['Type'] == 'Expense') & (user_data['Category'] == 'Debt Repayment')]['Amount'].sum()
+        current_month_categories = user_data[user_data['Month'] == current_month]['Category'].nunique()
+        week_days_logged = len(user_data[(user_data['Date'].dt.date >= week_start) & (user_data['Date'].dt.date <= today)]['Date'].dt.date.unique())
         
         for quest_name, quest_info in quests.items():
             if quest_name not in st.session_state['quests_completed']:
                 if quest_name == "Expense Tracker" and len(recent_expenses) >= 5:
                     st.session_state['quests_completed'].append(quest_name)
+                    st.session_state['xp'] += quest_info['xp']
+                    st.session_state['coins'] += quest_info['coins']
+                    save_user_progress(st.session_state['username'], st.session_state['xp'], st.session_state['coins'],
+                                      st.session_state['redeemed_rewards'], st.session_state['check_in_streak'],
+                                      st.session_state['last_check_in'], st.session_state['quests_completed'],
+                                      st.session_state['quiz_score'])
                     st.success(f"🎉 Quest Completed: {quest_name}! Earned {quest_info['xp']} XP and {quest_info['coins']} coins!")
                 elif quest_name == "Savings Starter" and balance >= 2000:
                     st.session_state['quests_completed'].append(quest_name)
+                    st.session_state['xp'] += quest_info['xp']
+                    st.session_state['coins'] += quest_info['coins']
+                    save_user_progress(st.session_state['username'], st.session_state['xp'], st.session_state['coins'],
+                                      st.session_state['redeemed_rewards'], st.session_state['check_in_streak'],
+                                      st.session_state['last_check_in'], st.session_state['quests_completed'],
+                                      st.session_state['quiz_score'])
                     st.success(f"🎉 Quest Completed: {quest_name}! Earned {quest_info['xp']} XP and {quest_info['coins']} coins!")
                 elif quest_name == "Budget Builder" and unique_days >= 10:
                     st.session_state['quests_completed'].append(quest_name)
+                    st.session_state['xp'] += quest_info['xp']
+                    st.session_state['coins'] += quest_info['coins']
+                    save_user_progress(st.session_state['username'], st.session_state['xp'], st.session_state['coins'],
+                                      st.session_state['redeemed_rewards'], st.session_state['check_in_streak'],
+                                      st.session_state['last_check_in'], st.session_state['quests_completed'],
+                                      st.session_state['quiz_score'])
+                    st.success(f"🎉 Quest Completed: {quest_name}! Earned {quest_info['xp']} XP and {quest_info['coins']} coins!")
+                elif quest_name == "Debt Crusher" and debt_payments >= 1000:
+                    st.session_state['quests_completed'].append(quest_name)
+                    st.session_state['xp'] += quest_info['xp']
+                    st.session_state['coins'] += quest_info['coins']
+                    save_user_progress(st.session_state['username'], st.session_state['xp'], st.session_state['coins'],
+                                      st.session_state['redeemed_rewards'], st.session_state['check_in_streak'],
+                                      st.session_state['last_check_in'], st.session_state['quests_completed'],
+                                      st.session_state['quiz_score'])
+                    st.success(f"🎉 Quest Completed: {quest_name}! Earned {quest_info['xp']} XP and {quest_info['coins']} coins!")
+                elif quest_name == "Category Explorer" and current_month_categories >= 3:
+                    st.session_state['quests_completed'].append(quest_name)
+                    st.session_state['xp'] += quest_info['xp']
+                    st.session_state['coins'] += quest_info['coins']
+                    save_user_progress(st.session_state['username'], st.session_state['xp'], st.session_state['coins'],
+                                      st.session_state['redeemed_rewards'], st.session_state['check_in_streak'],
+                                      st.session_state['last_check_in'], st.session_state['quests_completed'],
+                                      st.session_state['quiz_score'])
+                    st.success(f"🎉 Quest Completed: {quest_name}! Earned {quest_info['xp']} XP and {quest_info['coins']} coins!")
+                elif quest_name == "Consistency Star" and week_days_logged >= 5:
+                    st.session_state['quests_completed'].append(quest_name)
+                    st.session_state['xp'] += quest_info['xp']
+                    st.session_state['coins'] += quest_info['coins']
+                    save_user_progress(st.session_state['username'], st.session_state['xp'], st.session_state['coins'],
+                                      st.session_state['redeemed_rewards'], st.session_state['check_in_streak'],
+                                      st.session_state['last_check_in'], st.session_state['quests_completed'],
+                                      st.session_state['quiz_score'])
                     st.success(f"🎉 Quest Completed: {quest_name}! Earned {quest_info['xp']} XP and {quest_info['coins']} coins!")
                 else:
                     st.info(f"Quest: {quest_name} - {quest_info['task']} (Reward: {quest_info['xp']} XP, {quest_info['coins']} coins)")
@@ -380,17 +476,24 @@ elif menu == "Dashboard":
         # Achievements
         st.markdown("#### 🎖️ Achievements")
         st.markdown("Earn badges by managing your finances wisely!")
+        achievements = []
         if total_saved >= 1000:
+            achievements.append(("Budget Beginner", "Saved ₹1,000", "You've started building a savings habit!", datetime.now()))
             st.success("💸 **Budget Beginner** - Saved ₹1,000 (Meaning: You've started building a savings habit!)")
         if total_saved >= 5000:
+            achievements.append(("Smart Saver", "Saved ₹5,000", "You're prioritizing financial security!", datetime.now()))
             st.success("🎯 **Smart Saver** - Saved ₹5,000 (Meaning: You're prioritizing financial security!)")
         if total_saved >= 10000:
+            achievements.append(("Wealth Warrior", "Saved ₹10,000", "You're on the path to wealth creation!", datetime.now()))
             st.success("🏆 **Wealth Warrior** - Saved ₹10,000 (Meaning: You're on the path to wealth creation!)")
         if len(user_data) >= 10:
+            achievements.append(("Consistency Champ", "10+ entries logged", "Consistent tracking is key to financial awareness!", datetime.now()))
             st.info("🗂️ **Consistency Champ** - 10+ entries logged (Meaning: Consistent tracking is key to financial awareness!)")
         if user_data['Category'].nunique() >= 5:
+            achievements.append(("Diverse Tracker", "5+ unique categories", "You're understanding your spending patterns!", datetime.now()))
             st.info("🎨 **Diverse Tracker** - 5+ unique categories (Meaning: You're understanding your spending patterns!)")
         if user_data['Category'].nunique() >= 10:
+            achievements.append(("Category Master", "10+ unique categories", "You're mastering comprehensive budgeting!", datetime.now()))
             st.info("🌈 **Category Master** - 10+ unique categories (Meaning: You're mastering comprehensive budgeting!)")
 
         # Logging Streak
@@ -401,16 +504,22 @@ elif menu == "Dashboard":
             unique_days = user_data['DateOnly'].nunique()
             st.info(f"📆 You've added entries on **{unique_days}** days!")
             if unique_days >= 3:
+                achievements.append(("3-Day Streak", "Logged entries for 3 days", "Early consistency builds strong habits.", datetime.now()))
                 st.success("🔥 **3-Day Streak** - Keep logging daily! (Meaning: Early consistency builds strong habits.)")
             if unique_days >= 7:
+                achievements.append(("1-Week Streak", "Logged entries for 7 days", "You're forming a routine.", datetime.now()))
                 st.success("🚀 **1-Week Streak** - One week strong! (Meaning: You're forming a routine.)")
             if unique_days >= 14:
+                achievements.append(("2-Week Streak", "Logged entries for 14 days", "You're committed to financial tracking.", datetime.now()))
                 st.success("🌟 **2-Week Streak** - Impressive dedication! (Meaning: You're committed to financial tracking.)")
             if unique_days >= 21:
+                achievements.append(("3-Week Streak", "Logged entries for 21 days", "Long-term habits lead to success.", datetime.now()))
                 st.success("⚡ **3-Week Streak** - Unstoppable! (Meaning: Long-term habits lead to success.)")
             if unique_days >= 30:
+                achievements.append(("1-Month Consistency Hero", "Logged entries for 30 days", "You've built a solid foundation.", datetime.now()))
                 st.success("🏅 **1-Month Consistency Hero** - A true budgeting pro! (Meaning: You've built a solid foundation.)")
             if unique_days >= 60:
+                achievements.append(("2-Month Legend", "Logged entries for 60 days", "Your discipline is inspiring.", datetime.now()))
                 st.success("👑 **2-Month Legend** - A budgeting legend! (Meaning: Your discipline is inspiring.)")
         else:
             st.warning("Date column is not in the correct format. Please ensure dates are valid.")
@@ -428,8 +537,10 @@ elif menu == "Dashboard":
                     break
             st.info(f"📈 You've maintained a positive balance for **{savings_streak}** consecutive months!")
             if savings_streak >= 2:
+                achievements.append(("Savings Sprout", "2+ months of positive balance", "Consistent saving builds wealth.", datetime.now()))
                 st.success("🌱 **Savings Sprout** - 2+ months of positive balance! (Meaning: Consistent saving builds wealth.)")
             if savings_streak >= 4:
+                achievements.append(("Savings Tree", "4+ months of positive balance", "Your savings are growing strong.", datetime.now()))
                 st.success("🌳 **Savings Tree** - 4+ months of positive balance! (Meaning: Your savings are growing strong.)")
         else:
             st.info("Start adding entries to track your savings streak!")
@@ -439,8 +550,10 @@ elif menu == "Dashboard":
         st.markdown("Check in daily to stay on top of your finances!")
         st.info(f"🔄 Current check-in streak: **{st.session_state['check_in_streak']}** days")
         if st.session_state['check_in_streak'] >= 3:
+            achievements.append(("3-Day Check-In Streak", "Checked in for 3 days", "Regular monitoring keeps you in control.", datetime.now()))
             st.success("🌟 **3-Day Check-In Streak** - Great daily engagement! (Meaning: Regular monitoring keeps you in control.)")
         if st.session_state['check_in_streak'] >= 7:
+            achievements.append(("7-Day Check-In Streak", "Checked in for 7 days", "You're mastering daily financial awareness.", datetime.now()))
             st.success("🚀 **7-Day Check-In Streak** - Amazing consistency! (Meaning: You're mastering daily financial awareness.)")
 
         # Emergency Fund Tracker
@@ -452,44 +565,69 @@ elif menu == "Dashboard":
             st.progress(progress)
             st.info(f"🛡️ Emergency Fund: ₹{emergency_savings:.2f} / ₹{st.session_state['emergency_fund_goal']:.2f} ({progress*100:.1f}%)")
             if progress >= 0.25:
+                achievements.append(("Quarter Funded", "25% of emergency fund goal", "You're building a safety net.", datetime.now()))
                 st.success("🏦 **Quarter Funded** - 25% of emergency fund goal! (Meaning: You're building a safety net.)")
             if progress >= 0.5:
+                achievements.append(("Half Funded", "50% of emergency fund goal", "Your financial security is growing.", datetime.now()))
                 st.success("🏧 **Half Funded** - 50% of emergency fund goal! (Meaning: Your financial security is growing.)")
             if progress >= 1.0:
+                achievements.append(("Fully Funded", "Emergency fund goal achieved", "You're prepared for the unexpected.", datetime.now()))
                 st.success("🎉 **Fully Funded** - Emergency fund goal achieved! (Meaning: You're prepared for the unexpected.)")
         else:
             st.info("Set an emergency fund goal in the 'Set Goals' tab!")
 
-        # Budget Goals
-        st.markdown("#### 🎯 Budget Goals")
-        st.markdown("Achieve your savings or spending goals to earn rewards!")
+        # Monthly Goal Progress
+        st.markdown("#### 🎯 Monthly Goal Progress")
+        st.markdown("Track your savings or spending goals!")
         current_month_str = current_month.strftime('%Y-%m')
         if current_month_str in st.session_state['goals']:
             goal = st.session_state['goals'][current_month_str]
             if goal['type'] == 'Savings':
+                progress = min(balance / goal['amount'], 1.0)
+                st.progress(progress)
+                st.info(f"💪 Savings Goal for {current_month_str}: ₹{balance:.2f} / ₹{goal['amount']} ({progress*100:.1f}%)")
                 if balance >= goal['amount']:
+                    achievements.append(("Goal Achiever", f"Met ₹{goal['amount']} savings goal", "You're hitting your financial targets!", datetime.now()))
                     st.success(f"🎉 **Goal Achiever** - Met ₹{goal['amount']} savings goal for {current_month_str}! (Meaning: You're hitting your financial targets!)")
                 else:
-                    st.info(f"💪 Savings goal for {current_month_str}: ₹{goal['amount']}. Current balance: ₹{balance:.2f}. Keep saving!")
+                    st.info(f"Keep saving to reach your goal!")
             elif goal['type'] == 'Spending Limit':
+                progress = max(1.0 - (expense_cur / goal['amount']), 0.0)
+                st.progress(progress)
+                st.info(f"💪 Spending Limit for {current_month_str}: ₹{expense_cur:.2f} / ₹{goal['amount']} ({progress*100:.1f}% under limit)")
                 if expense_cur <= goal['amount']:
+                    achievements.append(("Spending Master", f"Kept expenses under ₹{goal['amount']}", "You're controlling your spending!", datetime.now()))
                     st.success(f"🎉 **Spending Master** - Kept expenses under ₹{goal['amount']} for {current_month_str}! (Meaning: You're controlling your spending!)")
                 else:
-                    st.info(f"💪 Spending limit for {current_month_str}: ₹{goal['amount']}. Current expenses: ₹{expense_cur:.2f}. Try to cut back!")
+                    st.info(f"Try to cut back to meet your spending limit!")
         else:
             st.info("Set a monthly goal in the 'Set Goals' tab to track your progress!")
+
+        # Badge Collection Gallery
+        st.markdown("#### 🏅 Badge Collection Gallery")
+        st.markdown("Showcase your earned badges!")
+        if achievements or st.session_state['quests_completed']:
+            st.markdown("**Your Badges**")
+            for name, desc, meaning, date in achievements:
+                st.markdown(f"- 🏆 **{name}** ({desc}) - *{meaning}* (Earned: {date.strftime('%Y-%m-%d')})")
+            for quest in st.session_state['quests_completed']:
+                st.markdown(f"- 🗺️ **{quest}** ({quests[quest]['task']}) - *Earned {quests[quest]['xp']} XP and {quests[quest]['coins']} coins!* (Earned: {datetime.now().strftime('%Y-%m-%d')})")
+        else:
+            st.info("Start earning badges by completing quests and achieving financial milestones!")
 
         # Peer Comparison Rank
         st.markdown("#### 🏅 Peer Comparison Rank")
         st.markdown("See how you stack up against other budgeters!")
         total_users = len(data['Username'].unique()) if not data.empty else 1
-        user_xp = calculate_xp(user_data)  # Defined below
+        user_xp = st.session_state['xp']
         peer_xps = [user_xp] + [random.randint(50, 500) for _ in range(total_users - 1)]
         rank = sum(1 for peer_xp in peer_xps if peer_xp > user_xp) + 1
         percentile = (1 - rank / total_users) * 100
         if percentile >= 90:
+            achievements.append(("Top 10% Budgeter", f"Rank {rank}/{total_users}", "You're among the best savers!", datetime.now()))
             st.success(f"🌟 **Top 10% Budgeter** - Rank {rank}/{total_users}! (Meaning: You're among the best savers!)")
         elif percentile >= 75:
+            achievements.append(("Rising Star", f"Rank {rank}/{total_users}", "Your budgeting skills are shining!", datetime.now()))
             st.success(f"🚀 **Rising Star** - Rank {rank}/{total_users}! (Meaning: Your budgeting skills are shining!)")
         else:
             st.info(f"📈 Rank {rank}/{total_users} ({percentile:.1f}% percentile). Keep budgeting to climb the ranks!")
@@ -524,16 +662,16 @@ elif menu == "Dashboard":
             xp += st.session_state['quiz_score'] * 5
             return xp
 
-        xp = calculate_xp(user_data)
-        level = xp // 100 + 1
-        next_level_xp = (level * 100) - xp
+        st.session_state['xp'] = calculate_xp(user_data)
+        level = st.session_state['xp'] // 100 + 1
+        next_level_xp = (level * 100) - st.session_state['xp']
         st.markdown(f"#### 🎮 Level: {level}")
-        st.progress((xp % 100) / 100)
-        st.caption(f"⭐ {xp} XP - {next_level_xp} XP to next level (Meaning: Your financial skills are leveling up!)")
+        st.progress((st.session_state['xp'] % 100) / 100)
+        st.caption(f"⭐ {st.session_state['xp']} XP - {next_level_xp} XP to next level!")
 
         # Coins and Redemption
-        coins = xp // 10 + sum(quests[quest]['coins'] for quest in st.session_state['quests_completed'])
-        st.sidebar.markdown(f"💰 Coins Earned: **{coins}**")
+        st.session_state['coins'] = st.session_state['xp'] // 10 + sum(quests[quest]['coins'] for quest in st.session_state['quests_completed'])
+        st.sidebar.markdown(f"💰 Coins Earned: **{st.session_state['coins']}**")
         st.markdown("#### 🏪 Coin Redemption")
         st.markdown("Redeem coins for virtual rewards to enhance your financial knowledge!")
         available_rewards = {
@@ -545,15 +683,20 @@ elif menu == "Dashboard":
         if st.button("Redeem Reward") and selected_reward:
             if selected_reward in available_rewards:
                 cost = available_rewards[selected_reward]["cost"]
-                if coins >= cost and selected_reward not in st.session_state['redeemed_rewards']:
+                if st.session_state['coins'] >= cost and selected_reward not in st.session_state['redeemed_rewards']:
                     st.session_state['redeemed_rewards'].append(selected_reward)
+                    st.session_state['coins'] -= cost
+                    save_user_progress(st.session_state['username'], st.session_state['xp'], st.session_state['coins'],
+                                      st.session_state['redeemed_rewards'], st.session_state['check_in_streak'],
+                                      st.session_state['last_check_in'], st.session_state['quests_completed'],
+                                      st.session_state['quiz_score'])
                     st.success(f"🎁 Redeemed: {selected_reward}! {available_rewards[selected_reward]['description']}")
                 elif selected_reward in st.session_state['redeemed_rewards']:
-                    st.warning("You've already redeemed this reward.")
+                    st.error("You've already redeemed this reward.")
                 else:
-                    st.warning(f"You need {cost - coins} more coins to redeem {selected_reward}.")
+                    st.warning(f"You need {cost - st.session_state['coins']} more coins to redeem {selected_reward}.")
             else:
-                st.warning("Please select a valid reward.")
+                st.error("Please select a valid reward.")
 
         # Display Redeemed Rewards
         if st.session_state['redeemed_rewards']:
@@ -612,6 +755,11 @@ elif menu == "Financial Education":
                     st.success("Correct! +1 point")
                 else:
                     st.error("Incorrect. Try again next time!")
+        st.session_state['xp'] += st.session_state['quiz_score'] * 5
+        save_user_progress(st.session_state['username'], st.session_state['xp'], st.session_state['coins'],
+                          st.session_state['redeemed_rewards'], st.session_state['check_in_streak'],
+                          st.session_state['last_check_in'], st.session_state['quests_completed'],
+                          st.session_state['quiz_score'])
         st.info(f"Quiz Score: {st.session_state['quiz_score']}/3 (Earned {st.session_state['quiz_score'] * 5} XP)")
         peer_scores = [st.session_state['quiz_score']] + [random.randint(0, 3) for _ in range(9)]
         quiz_rank = sum(1 for score in peer_scores if score > st.session_state['quiz_score']) + 1
@@ -639,3 +787,4 @@ if st.session_state.get('file_uploader'):
 
 user_csv = user_data.to_csv(index=False).encode('utf-8')
 st.sidebar.download_button("Download My Data", user_csv, f"{st.session_state['username']}_budget_data.csv", "text/csv")
+
