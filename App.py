@@ -103,7 +103,6 @@ st.markdown("""
 
 #
 
-
 # Set page configuration
 st.set_page_config(page_title="Finora - Student Budget Manager", page_icon="💰")
 
@@ -201,33 +200,10 @@ elif menu == "Dashboard":
         if not expense_data.empty:
             pie_data = expense_data.groupby('Category')['Amount'].sum()
             if not pie_data.empty:
-                ```chartjs
-                {
-                    "type": "pie",
-                    "data": {
-                        "labels": pie_data.index.tolist(),
-                        "datasets": [{
-                            "data": pie_data.values.tolist(),
-                            "backgroundColor": ["#FF6384", "#36A2EB", "#FFCE56", "#4BC0C0", "#9966FF"],
-                            "borderColor": ["#FFFFFF"] * len(pie_data),
-                            "borderWidth": 1
-                        }]
-                    },
-                    "options": {
-                        "responsive": true,
-                        "plugins": {
-                            "legend": {
-                                "position": "top"
-                            },
-                            "tooltip": {
-                                "callbacks": {
-                                    "label": "function(context) { return context.label + ': ₹' + context.parsed.toFixed(2); }"
-                                }
-                            }
-                        }
-                    }
-                }
-                ```
+                fig, ax = plt.subplots()
+                ax.pie(pie_data, labels=pie_data.index, autopct='%1.1f%%', colors=['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF'])
+                ax.axis('equal')
+                st.pyplot(fig)
             else:
                 st.info("No expense data available for the current month.")
         else:
@@ -337,3 +313,6 @@ if uploaded_file:
 
 csv = st.session_state['data'].to_csv(index=False).encode('utf-8')
 st.sidebar.download_button("Download My Data", csv, "my_budget_data.csv", "text/csv")
+
+
+
