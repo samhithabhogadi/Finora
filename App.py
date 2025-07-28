@@ -7,73 +7,6 @@ import yfinance as yf
 import os
 st.set_page_config(page_title="Student Budget Manager", layout="centered")
 
-# Define credential file
-CREDENTIAL_FILE = "credentials.csv"
-
-# ----------- Session Initialization -----------
-if 'logged_in' not in st.session_state:
-    st.session_state['logged_in'] = False
-if 'username' not in st.session_state:
-    st.session_state['username'] = ""
-if 'password' not in st.session_state:
-    st.session_state['password'] = ""
-
-# Initialize or load credentials
-if not os.path.exists(CREDENTIAL_FILE):
-    pd.DataFrame(columns=['Username', 'Password']).to_csv(CREDENTIAL_FILE, index=False)
-credentials = pd.read_csv(CREDENTIAL_FILE)
-
-# ----------- Navigation and Authentication Menu -----------
-auth_menu = st.sidebar.radio("Authentication", ["Sign In", "Sign Up"]) if not st.session_state['logged_in'] else None
-menu = st.sidebar.radio("Navigation", ["Dashboard", "Add Entry", "Financial Education", "Logout"]) if st.session_state['logged_in'] else None
-
-# ---------------------- SIGN UP ----------------------
-if not st.session_state['logged_in'] and auth_menu == "Sign Up":
-    st.subheader("✏️ Create a New Account")
-    new_user = st.text_input("Choose a Username")
-    new_password = st.text_input("Choose a Password", type='password')
-
-    if st.button("Create Account"):
-        if new_user in credentials['Username'].values:
-            st.warning("🚫 Username already exists. Try a different one.")
-        else:
-            new_cred = pd.DataFrame([{'Username': new_user, 'Password': new_password}])
-            credentials = pd.concat([credentials, new_cred], ignore_index=True)
-            credentials.to_csv(CREDENTIAL_FILE, index=False)
-
-            # Create a blank data file for this user
-            pd.DataFrame(columns=['Date', 'Type', 'Amount', 'Category', 'Notes']).to_csv(f"data_{new_user}.csv", index=False)
-
-            st.session_state['logged_in'] = True
-            st.session_state['username'] = new_user
-            st.session_state['password'] = new_password
-            st.success("✅ Account created successfully! Redirecting to Dashboard...")
-            st.rerun()
-
-# ---------------------- SIGN IN ----------------------
-if not st.session_state['logged_in'] and auth_menu == "Sign In":
-    st.subheader("🔐 Sign In to Your Account")
-    username = st.text_input("Username", value=st.session_state['username'])
-    password = st.text_input("Password", type='password', value=st.session_state['password'])
-
-    if st.button("Login"):
-        user_match = (credentials['Username'] == username) & (credentials['Password'] == password)
-        if user_match.any():
-            st.session_state['logged_in'] = True
-            st.session_state['username'] = username
-            st.session_state['password'] = password
-            st.success(f"✅ Welcome, {username}! Redirecting to Dashboard...")
-            st.rerun()
-        else:
-            st.error("❌ Invalid username or password")
-
-# ---------------------- LOGOUT ----------------------
-if st.session_state['logged_in'] and menu == "Logout":
-    st.session_state['logged_in'] = False
-    st.session_state['username'] = ''
-    st.session_state['password'] = ''
-    st.success("🚪 You have been logged out.")
-    st.rerun()
  #
 st.markdown("""
     <style>
@@ -168,17 +101,33 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
+st.set_page_config(page_title="Finora - Student Budget Manager", page_icon="💰")
 
-st.title("💰 Finora - Student Budget Manager")
-st.markdown("A simple app to track your income and expenses and learn about money management.")
+# -------------------- User Login --------------------
+if 'username' not in st.session_state:
+    username = st.text_input("Enter Username to Start", key="username_input")
+    if st.button("Login"):
+        st.session_state['username'] = username
+        st.experimental_rerun()
+    st.stop()
+else:
+    st.sidebar.success(f"Welcome, {st.session_state['username']}!")
+    if st.sidebar.button("Logout"):
+        del st.session_state['username']
+        st.experimental_rerun()
 
+# -------------------- Data Handling --------------------
 if os.path.exists('user_data.csv'):
     st.session_state['data'] = pd.read_csv('user_data.csv', parse_dates=['Date'])
 else:
     st.session_state['data'] = pd.DataFrame(columns=['Type', 'Amount', 'Category', 'Date'])
 
+data = st.session_state['data']
+
+# -------------------- Sidebar Navigation --------------------
 menu = st.sidebar.radio("Navigation", ["Dashboard", "Add Entry", "Financial Education"])
 
+# -------------------- Add Entry --------------------
 if menu == "Add Entry":
     st.subheader("➕ Add Income or Expense")
     entry_type = st.selectbox("Type", ["Income", "Expense"])
@@ -188,13 +137,13 @@ if menu == "Add Entry":
     if st.button("Add Entry"):
         new_entry = pd.DataFrame([[entry_type, amount, category, pd.to_datetime(entry_date)]],
                                   columns=['Type', 'Amount', 'Category', 'Date'])
-        st.session_state['data'] = pd.concat([st.session_state['data'], new_entry], ignore_index=True)
+        st.session_state['data'] = pd.concat([data, new_entry], ignore_index=True)
         st.session_state['data'].to_csv('user_data.csv', index=False)
         st.success("Entry added and saved successfully!")
 
+# -------------------- Dashboard --------------------
 elif menu == "Dashboard":
     st.subheader("📊 Dashboard")
-    data = st.session_state['data']
     if data.empty:
         st.info("No data available. Add income and expenses to see dashboard.")
     else:
@@ -210,12 +159,12 @@ elif menu == "Dashboard":
 
         income_cur, expense_cur = get_summary(current_month)
         income_last, expense_last = get_summary(last_month)
+        balance = income_cur - expense_cur
 
         col1, col2 = st.columns(2)
         with col1:
             st.metric("💸 Current Month Income", f"₹{income_cur:.2f}")
             st.metric("📉 Current Month Expenses", f"₹{expense_cur:.2f}")
-            balance = income_cur - expense_cur
             st.metric("🪙 Balance", f"₹{balance:.2f}")
 
         with col2:
@@ -245,15 +194,64 @@ elif menu == "Dashboard":
             st.markdown("""
             **Recommended Allocation:**
             - 💼 SIP (Mutual Fund): ₹{:.0f}
-              - Example: Axis Bluechip Fund - suitable for long-term growth
+              - Example: Axis Bluechip Fund
             - 🏦 Fixed Deposit (FD): ₹{:.0f}
-              - Example: HDFC FD at 7% for 1 year
-            - 📱 Emergency Savings (UPI Wallet / RD): ₹{:.0f}
-              - Keep liquid funds for small emergencies
+              - Example: HDFC FD at 7%
+            - 📱 Emergency Savings: ₹{:.0f}
+              - Use a UPI wallet or recurring deposit
             """.format(balance * 0.5, balance * 0.3, balance * 0.2))
         else:
             st.info("Try to reduce expenses or increase income to have an investable surplus.")
 
+        # -------------------- Gamification --------------------
+        st.markdown("### 🏅 Achievements")
+        total_income = data[data['Type'] == 'Income']['Amount'].sum()
+        total_expense = data[data['Type'] == 'Expense']['Amount'].sum()
+        total_saved = total_income - total_expense
+
+        if total_saved >= 1000:
+            st.success("💸 Budget Beginner - Saved ₹1,000")
+        if total_saved >= 5000:
+            st.success("🎯 Smart Saver - Saved ₹5,000")
+        if total_saved >= 10000:
+            st.success("🏆 Wealth Warrior - Saved ₹10,000")
+        if len(data) >= 10:
+            st.info("🗂️ Consistency Champ - 10+ entries logged")
+        if data['Category'].nunique() >= 5:
+            st.info("🎨 Diverse Tracker - 5+ unique categories")
+
+        st.markdown("### 🔥 Logging Streak")
+        data['DateOnly'] = data['Date'].dt.date
+        unique_days = data['DateOnly'].nunique()
+        st.info(f"📆 You've added entries on **{unique_days}** days!")
+        if unique_days >= 3:
+            st.success("🔥 3-Day Streak!")
+        if unique_days >= 7:
+            st.success("🚀 1-Week Logging Streak!")
+        if unique_days >= 30:
+            st.success("🌟 1-Month Consistency Hero!")
+
+        def calculate_xp(data):
+            income_entries = data[data['Type'] == 'Income'].shape[0]
+            expense_entries = data[data['Type'] == 'Expense'].shape[0]
+            xp = (income_entries * 5) + (expense_entries * 3)
+            return xp
+
+        xp = calculate_xp(data)
+        level = xp // 100 + 1
+        next_level_xp = (level * 100) - xp
+        st.markdown(f"### 🎮 Level: {level}")
+        st.progress((xp % 100) / 100)
+        st.caption(f"⭐ {xp} XP - {next_level_xp} XP to next level")
+
+        coins = xp // 10
+        st.sidebar.markdown(f"💰 Coins Earned: **{coins}**")
+        if coins >= 100:
+            st.sidebar.success("🎁 Redeemable: Premium Tip Pack")
+        else:
+            st.sidebar.info(f"Earn {100 - coins} more coins to unlock rewards!")
+
+# -------------------- Financial Education --------------------
 elif menu == "Financial Education":
     st.subheader("📚 Financial Education")
     st.markdown("### 🧠 Tips & Tricks")
@@ -270,6 +268,17 @@ elif menu == "Financial Education":
         st.markdown("- Sensex climbs 300 pts; Nifty above 23,500 ahead of Fed decision")
         st.markdown("- Gold prices drop as dollar strengthens on Fed signals")
         st.markdown("- Mutual Fund SIPs hit record ₹18,000 crore in June 2025")
+
+# -------------------- Upload & Download --------------------
+st.sidebar.markdown("### 📂 Data Options")
+uploaded_file = st.sidebar.file_uploader("Upload CSV", type="csv")
+if uploaded_file:
+    st.session_state['data'] = pd.read_csv(uploaded_file, parse_dates=['Date'])
+    st.success("Data uploaded successfully!")
+
+csv = st.session_state['data'].to_csv(index=False).encode('utf-8')
+st.sidebar.download_button("Download My Data", csv, "my_budget_data.csv", "text/csv")
+
         st.markdown("- RBI hints at rate cut if inflation remains within target")
 
     st.markdown("---")
