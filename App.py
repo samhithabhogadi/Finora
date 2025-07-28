@@ -279,7 +279,7 @@ if uploaded_file:
 csv = st.session_state['data'].to_csv(index=False).encode('utf-8')
 st.sidebar.download_button("Download My Data", csv, "my_budget_data.csv", "text/csv")
 
-        st.markdown("- RBI hints at rate cut if inflation remains within target")
+    st.markdown("- RBI hints at rate cut if inflation remains within target")
 
     st.markdown("---")
     st.info("We plan to integrate a news API for live updates in future versions!")
