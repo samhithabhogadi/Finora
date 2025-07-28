@@ -5,3 +5,4 @@ yfinance>=0.2
 streamlit
 streamlit-authenticator
 plotly.express
+passlib==1.7.4
