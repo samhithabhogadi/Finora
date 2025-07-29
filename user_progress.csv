@@ -1,8 +1,62 @@
 def load_user_progress():
+    columns = ['Username', 'XP', 'Coins', 'Redeemed_Rewards', 'Check_In_Streak', 'Last_Check_In', 'Quests_Completed', 'Quiz_Score']
     if os.path.exists('user_progress.csv'):
-        df = pd.read_csv('user_progress.csv')
-        df['Redeemed_Rewards'] = df['Redeemed_Rewards'].apply(lambda x: eval(x) if pd.notna(x) else [])
-        df['Quests_Completed'] = df['Quests_Completed'].apply(lambda x: eval(x) if pd.notna(x) else [])
-        df['Last_Check_In'] = pd.to_datetime(df['Last_Check_In'], errors='coerce')
+        try:
+            # Debug: Log file contents
+            with open('user_progress.csv', 'r') as f:
+                raw_content = f.read()
+                if not raw_content.strip():
+                    st.warning("user_progress.csv is empty. Initializing new file.")
+                    df = pd.DataFrame(columns=columns)
+                    df.to_csv('user_progress.csv', index=False)
+                    return df
+                st.info(f"Raw contents of user_progress.csv:\n{raw_content[:500]}...")  # Truncate for brevity
+            
+            # Read CSV with strict error handling
+            df = pd.read_csv('user_progress.csv', dtype={
+                'Username': str,
+                'XP': float,
+                'Coins': float,
+                'Redeemed_Rewards': str,
+                'Check_In_Streak': float,
+                'Last_Check_In': str,
+                'Quests_Completed': str,
+                'Quiz_Score': float
+            }, na_values=['', 'NaN'], keep_default_na=False, skipinitialspace=True)
+            
+            # Verify columns
+            if not all(col in df.columns for col in columns):
+                st.error("user_progress.csv is missing required columns. Initializing new file.")
+                df = pd.DataFrame(columns=columns)
+                df.to_csv('user_progress.csv', index=False)
+                return df
+            
+            # Parse complex columns safely
+            def safe_eval(x):
+                try:
+                    return eval(x) if pd.notna(x) and x != '' and isinstance(x, str) else []
+                except:
+                    return []
+            
+            df['Redeemed_Rewards'] = df['Redeemed_Rewards'].apply(safe_eval)
+            df['Quests_Completed'] = df['Quests_Completed'].apply(safe_eval)
+            df['Last_Check_In'] = pd.to_datetime(df['Last_Check_In'], errors='coerce')
+            
+            # Validate rows
+            df = df.dropna(subset=['Username', 'XP', 'Coins', 'Check_In_Streak', 'Quiz_Score'])
+            if df.empty and len(pd.read_csv('user_progress.csv').index) > 0:
+                st.warning("All rows in user_progress.csv were invalid. Initializing new file.")
+                df = pd.DataFrame(columns=columns)
+                df.to_csv('user_progress.csv', index=False)
+            
+            return df
+        except Exception as e:
+            st.error(f"Failed to parse user_progress.csv: {str(e)}. Initializing new file.")
+            df = pd.DataFrame(columns=columns)
+            df.to_csv('user_progress.csv', index=False)
+            return df
+    else:
+        st.info("user_progress.csv not found. Initializing new file.")
+        df = pd.DataFrame(columns=columns)
+        df.to_csv('user_progress.csv', index=False)
         return df
-    return pd.DataFrame(columns=['Username', 'XP', 'Coins', 'Redeemed_Rewards', 'Check_In_Streak', 'Last_Check_In', 'Quests_Completed', 'Quiz_Score'])
