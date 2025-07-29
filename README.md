@@ -27,7 +27,7 @@ Finora is a lightweight, easy-to-use budget management and financial education a
    ```bash
    git clone https://github.com/samhithabhogadi/finora.git
    cd finora
- 
+uv pip list
 pip install -r requirements.txt
 streamlit run finora_budget_app.py
 pip install streamlit-authenticator
