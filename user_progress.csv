@@ -60,3 +60,33 @@ def load_user_progress():
         df = pd.DataFrame(columns=columns)
         df.to_csv('user_progress.csv', index=False)
         return df
+
+
+def save_user_progress(username, xp, coins, redeemed_rewards, check_in_streak, last_check_in, quests_completed, quiz_score):
+    import csv
+    progress = load_user_progress()
+    # Validate inputs
+    xp = float(xp) if xp is not None and isinstance(xp, (int, float)) else 0.0
+    coins = float(coins) if coins is not None and isinstance(coins, (int, float)) else 0.0
+    check_in_streak = float(check_in_streak) if check_in_streak is not None and isinstance(check_in_streak, (int, float)) else 0.0
+    quiz_score = float(quiz_score) if quiz_score is not None and isinstance(quiz_score, (int, float)) else 0.0
+    redeemed_rewards = list(redeemed_rewards) if isinstance(redeemed_rewards, (list, tuple)) else []
+    quests_completed = list(quests_completed) if isinstance(quests_completed, (list, tuple)) else []
+    last_check_in_str = last_check_in.strftime('%Y-%m-%d %H:%M:%S') if pd.notnull(last_check_in) else ''
+    
+    # Remove invalid characters from username
+    username = str(username).replace(',', '').replace('"', '') if username else 'unknown'
+    
+    if username in progress['Username'].values:
+        progress.loc[progress['Username'] == username, [
+            'XP', 'Coins', 'Redeemed_Rewards', 'Check_In_Streak', 'Last_Check_In', 'Quests_Completed', 'Quiz_Score'
+        ]] = [xp, coins, str(redeemed_rewards), check_in_streak, last_check_in_str, str(quests_completed), quiz_score]
+    else:
+        new_progress = pd.DataFrame([[
+            username, xp, coins, str(redeemed_rewards), check_in_streak, last_check_in_str, str(quests_completed), quiz_score
+        ]], columns=['Username', 'XP', 'Coins', 'Redeemed_Rewards', 'Check_In_Streak', 'Last_Check_In', 'Quests_Completed', 'Quiz_Score'])
+        progress = pd.concat([progress, new_progress], ignore_index=True)
+    
+    # Write CSV with proper quoting and validation
+    progress.to_csv('user_progress.csv', index=False, quoting=csv.QUOTE_NONNUMERIC, escapechar='\\')
+
