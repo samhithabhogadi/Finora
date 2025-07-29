@@ -6,6 +6,7 @@ from datetime import datetime, date
 import yfinance as yf
 import os
 import random
+import csv
 from passlib.hash import pbkdf2_sha256
 
 st.set_page_config(page_title="Student Budget Manager", layout="centered")
@@ -131,28 +132,68 @@ def verify_user(username, password):
 
 # -------------------- User Progress Handling --------------------
 def load_user_progress():
+    columns = ['Username', 'XP', 'Coins', 'Redeemed_Rewards', 'Check_In_Streak', 'Last_Check_In', 'Quests_Completed', 'Quiz_Score']
     if os.path.exists('user_progress.csv'):
-        df = pd.read_csv('user_progress.csv')
-        if 'Redeemed_Rewards' in df.columns:
-            df['Redeemed_Rewards'] = df['Redeemed_Rewards'].apply(lambda x: eval(x) if pd.notna(x) else [])
-        if 'Quests_Completed' in df.columns:
-            df['Quests_Completed'] = df['Quests_Completed'].apply(lambda x: eval(x) if pd.notna(x) else [])
-        if 'Last_Check_In' in df.columns:
+        try:
+            df = pd.read_csv('user_progress.csv', dtype={
+                'Username': str,
+                'XP': float,
+                'Coins': float,
+                'Redeemed_Rewards': str,
+                'Check_In_Streak': float,
+                'Last_Check_In': str,
+                'Quests_Completed': str,
+                'Quiz_Score': float
+            }, na_values=['', 'NaN'], keep_default_na=False)
+            if not all(col in df.columns for col in columns):
+                st.error("user_progress.csv is missing required columns. Initializing new file.")
+                df = pd.DataFrame(columns=columns)
+                df.to_csv('user_progress.csv', index=False)
+                return df
+            df['Redeemed_Rewards'] = df['Redeemed_Rewards'].apply(
+                lambda x: eval(x) if pd.notna(x) and x != '' and isinstance(x, str) else []
+            )
+            df['Quests_Completed'] = df['Quests_Completed'].apply(
+                lambda x: eval(x) if pd.notna(x) and x != '' and isinstance(x, str) else []
+            )
             df['Last_Check_In'] = pd.to_datetime(df['Last_Check_In'], errors='coerce')
+            df = df.dropna(subset=['Username', 'XP', 'Coins', 'Check_In_Streak', 'Quiz_Score'])
+            if df.empty and len(pd.read_csv('user_progress.csv').index) > 0:
+                st.warning("All rows in user_progress.csv were invalid. Initializing new file.")
+                df = pd.DataFrame(columns=columns)
+                df.to_csv('user_progress.csv', index=False)
+            return df
+        except Exception as e:
+            st.error(f"Failed to parse user_progress.csv: {str(e)}. Initializing new file.")
+            df = pd.DataFrame(columns=columns)
+            df.to_csv('user_progress.csv', index=False)
+            return df
+    else:
+        df = pd.DataFrame(columns=columns)
+        df.to_csv('user_progress.csv', index=False)
         return df
-    return pd.DataFrame(columns=['Username', 'XP', 'Coins', 'Redeemed_Rewards', 'Check_In_Streak', 'Last_Check_In', 'Quests_Completed', 'Quiz_Score'])
 
 def save_user_progress(username, xp, coins, redeemed_rewards, check_in_streak, last_check_in, quests_completed, quiz_score):
     progress = load_user_progress()
+    xp = float(xp) if xp is not None else 0.0
+    coins = float(coins) if coins is not None else 0.0
+    check_in_streak = float(check_in_streak) if check_in_streak is not None else 0.0
+    quiz_score = float(quiz_score) if quiz_score is not None else 0.0
+    redeemed_rewards = list(redeemed_rewards) if isinstance(redeemed_rewards, (list, tuple)) else []
+    quests_completed = list(quests_completed) if isinstance(quests_completed, (list, tuple)) else []
+    last_check_in_str = last_check_in.strftime('%Y-%m-%d %H:%M:%S') if pd.notnull(last_check_in) else ''
+    
     if username in progress['Username'].values:
-        progress.loc[progress['Username'] == username, ['XP', 'Coins', 'Redeemed_Rewards', 'Check_In_Streak', 'Last_Check_In', 'Quests_Completed', 'Quiz_Score']] = [
-            xp, coins, str(redeemed_rewards), check_in_streak, last_check_in, str(quests_completed), quiz_score
-        ]
+        progress.loc[progress['Username'] == username, [
+            'XP', 'Coins', 'Redeemed_Rewards', 'Check_In_Streak', 'Last_Check_In', 'Quests_Completed', 'Quiz_Score'
+        ]] = [xp, coins, str(redeemed_rewards), check_in_streak, last_check_in_str, str(quests_completed), quiz_score]
     else:
-        new_progress = pd.DataFrame([[username, xp, coins, str(redeemed_rewards), check_in_streak, last_check_in, str(quests_completed), quiz_score]],
-                                    columns=['Username', 'XP', 'Coins', 'Redeemed_Rewards', 'Check_In_Streak', 'Last_Check_In', 'Quests_Completed', 'Quiz_Score'])
+        new_progress = pd.DataFrame([[
+            username, xp, coins, str(redeemed_rewards), check_in_streak, last_check_in_str, str(quests_completed), quiz_score
+        ]], columns=['Username', 'XP', 'Coins', 'Redeemed_Rewards', 'Check_In_Streak', 'Last_Check_In', 'Quests_Completed', 'Quiz_Score'])
         progress = pd.concat([progress, new_progress], ignore_index=True)
-    progress.to_csv('user_progress.csv', index=False)
+    
+    progress.to_csv('user_progress.csv', index=False, quoting=csv.QUOTE_NONNUMERIC)
 
 # -------------------- User Login --------------------
 if 'username' not in st.session_state:
@@ -168,7 +209,7 @@ if 'username' not in st.session_state:
                 if verify_user(login_username, login_password):
                     st.session_state['username'] = login_username
                     st.session_state['goals'] = {}
-                    # Load user progress
+                    st.session_state['emergency_fund_goal'] = 0
                     progress = load_user_progress()
                     if login_username in progress['Username'].values:
                         user_row = progress[progress['Username'] == login_username].iloc[0]
@@ -223,22 +264,33 @@ else:
         st.rerun()
 
 # -------------------- Data Handling --------------------
-if os.path.exists('user_data.csv'):
-    st.session_state['data'] = pd.read_csv('user_data.csv', parse_dates=['Date'])
-    if not all(col in st.session_state['data'].columns for col in ['Username', 'Type', 'Amount', 'Category', 'Date']):
-        st.session_state['data']['Username'] = ''
-        st.session_state['data'].to_csv('user_data.csv', index=False)
-    if not pd.api.types.is_datetime64_any_dtype(st.session_state['data']['Date']):
-        st.session_state['data']['Date'] = pd.to_datetime(st.session_state['data']['Date'], errors='coerce')
-        if st.session_state['data']['Date'].isna().any():
-            st.error("Some dates in the CSV are invalid. Please ensure all dates are in a valid format.")
+if 'data' not in st.session_state:
+    if os.path.exists('user_data.csv'):
+        try:
+            st.session_state['data'] = pd.read_csv('user_data.csv', parse_dates=['Date'])
+            required_columns = ['Username', 'Type', 'Amount', 'Category', 'Date']
+            if not all(col in st.session_state['data'].columns for col in required_columns):
+                st.error("user_data.csv is missing required columns: Username, Type, Amount, Category, Date")
+                st.session_state['data'] = pd.DataFrame(columns=required_columns)
+                st.session_state['data'].to_csv('user_data.csv', index=False)
+                st.stop()
+            if not pd.api.types.is_datetime64_any_dtype(st.session_state['data']['Date']):
+                st.session_state['data']['Date'] = pd.to_datetime(st.session_state['data']['Date'], errors='coerce')
+                if st.session_state['data']['Date'].isna().any():
+                    st.error("Some dates in user_data.csv are invalid. Please ensure all dates are in a valid format.")
+                    st.stop()
+        except Exception as e:
+            st.error(f"Failed to load user_data.csv: {str(e)}")
+            st.session_state['data'] = pd.DataFrame(columns=['Username', 'Type', 'Amount', 'Category', 'Date'])
+            st.session_state['data'].to_csv('user_data.csv', index=False)
             st.stop()
-else:
-    st.session_state['data'] = pd.DataFrame(columns=['Username', 'Type', 'Amount', 'Category', 'Date'])
+    else:
+        st.session_state['data'] = pd.DataFrame(columns=['Username', 'Type', 'Amount', 'Category', 'Date'])
+        st.session_state['data'].to_csv('user_data.csv', index=False)
 
 # Filter data for the current user
 data = st.session_state['data']
-user_data = data[data['Username'] == st.session_state['username']].copy()
+user_data = data[data['Username'] == st.session_state['username']].copy() if not data.empty else pd.DataFrame(columns=data.columns)
 
 # -------------------- Sidebar Navigation --------------------
 st.sidebar.markdown("## Main")
@@ -288,14 +340,17 @@ if menu == "Add Entry":
     st.subheader("➕ Add Income or Expense")
     entry_type = st.selectbox("Type", ["Income", "Expense"])
     amount = st.number_input("Amount", min_value=0.0, step=10.0)
-    predefined_categories = ["Food", "Transport", "Entertainment", "Savings", "Education", "Rent", "Utilities", "Clothing", "Health", "Debt Repayment", "Other"]
-    category = st.selectbox("Category", predefined_categories)
-    if category == "Other":
-        custom_category = st.text_input("Enter Custom Category")
-        category = custom_category if custom_category else "Other"
+    if entry_type == "Expense":
+        predefined_categories = ["Food", "Transport", "Entertainment", "Savings", "Education", "Rent", "Utilities", "Clothing", "Health", "Debt Repayment", "Other"]
+        category = st.selectbox("Category", predefined_categories)
+        if category == "Other":
+            custom_category = st.text_input("Enter Custom Category")
+            category = custom_category if custom_category else "Other"
+    else:
+        category = "Income"
     entry_date = st.date_input("Date", value=datetime.today().date())
     if st.button("Add Entry"):
-        if category == "Other" and not custom_category:
+        if entry_type == "Expense" and category == "Other" and not custom_category:
             st.warning("Please enter a custom category name or select a predefined category.")
         elif amount <= 0:
             st.warning("Please enter a valid amount greater than 0.")
@@ -312,9 +367,10 @@ elif menu == "Dashboard":
     
     # Daily Check-In
     today = datetime.today().date()
-    if st.session_state['last_check_in'] != today:
+    if st.session_state['last_check_in'] is None or pd.Timestamp(st.session_state['last_check_in']).date() != today:
         if st.button("📅 Daily Check-In"):
-            if st.session_state['last_check_in'] and (today - pd.Timestamp(st.session_state['last_check_in']).date()).days == 1:
+            last_check_in_date = pd.Timestamp(st.session_state['last_check_in']).date() if st.session_state['last_check_in'] is not None else None
+            if last_check_in_date and (today - last_check_in_date).days == 1:
                 st.session_state['check_in_streak'] += 1
             else:
                 st.session_state['check_in_streak'] = 1
@@ -330,7 +386,11 @@ elif menu == "Dashboard":
     if user_data.empty:
         st.info("No data available. Add income and expenses to see dashboard.")
     else:
-        user_data['Month'] = user_data['Date'].dt.to_period('M')
+        try:
+            user_data['Month'] = user_data['Date'].dt.to_period('M')
+        except Exception as e:
+            st.error(f"Failed to create Month column: {str(e)}. Please ensure Date column contains valid dates.")
+            st.stop()
         current_month = pd.Timestamp.now().to_period('M')
         last_month = current_month - 1
 
@@ -410,9 +470,9 @@ elif menu == "Dashboard":
         week_start = today - timedelta(days=today.weekday())
         recent_expenses = user_data[(user_data['Type'] == 'Expense') & (user_data['Date'].dt.date >= week_start)]
         unique_days = user_data['Date'].dt.date.nunique() if pd.api.types.is_datetime64_any_dtype(user_data['Date']) else 0
-        debt_payments = user_data[(user_data['Type'] == 'Expense') & (user_data['Category'] == 'Debt Repayment')]['Amount'].sum()
-        current_month_categories = user_data[user_data['Month'] == current_month]['Category'].nunique()
-        week_days_logged = len(user_data[(user_data['Date'].dt.date >= week_start) & (user_data['Date'].dt.date <= today)]['Date'].dt.date.unique())
+        debt_payments = user_data[(user_data['Type'] == 'Expense') & (user_data['Category'] == 'Debt Repayment')]['Amount'].sum() if not user_data.empty else 0
+        current_month_categories = user_data[user_data['Month'] == current_month]['Category'].nunique() if not user_data.empty else 0
+        week_days_logged = len(user_data[(user_data['Date'].dt.date >= week_start) & (user_data['Date'].dt.date <= today)]['Date'].dt.date.unique()) if not user_data.empty else 0
         
         for quest_name, quest_info in quests.items():
             if quest_name not in st.session_state['quests_completed']:
@@ -499,7 +559,7 @@ elif menu == "Dashboard":
         # Logging Streak
         st.markdown("#### 🔥 Logging Streak")
         st.markdown("Log entries regularly to build a budgeting habit!")
-        if pd.api.types.is_datetime64_any_dtype(user_data['Date']):
+        if pd.api.types.is_datetime64_any_dtype(user_data['Date']) and not user_data.empty:
             user_data['DateOnly'] = user_data['Date'].dt.date
             unique_days = user_data['DateOnly'].nunique()
             st.info(f"📆 You've added entries on **{unique_days}** days!")
@@ -522,7 +582,7 @@ elif menu == "Dashboard":
                 achievements.append(("2-Month Legend", "Logged entries for 60 days", "Your discipline is inspiring.", datetime.now()))
                 st.success("👑 **2-Month Legend** - A budgeting legend! (Meaning: Your discipline is inspiring.)")
         else:
-            st.warning("Date column is not in the correct format. Please ensure dates are valid.")
+            st.info("Start adding entries to track your logging streak.")
 
         # Savings Streak
         st.markdown("#### 💰 Savings Streak")
@@ -559,7 +619,7 @@ elif menu == "Dashboard":
         # Emergency Fund Tracker
         st.markdown("#### 🛡️ Emergency Fund Tracker")
         st.markdown("Build a safety net for unexpected expenses!")
-        emergency_savings = user_data[(user_data['Type'] == 'Income') & (user_data['Category'].str.lower() == 'savings')]['Amount'].sum()
+        emergency_savings = user_data[(user_data['Type'] == 'Income') & (user_data['Category'].str.lower() == 'income')]['Amount'].sum() if not user_data.empty else 0
         if st.session_state['emergency_fund_goal'] > 0:
             progress = min(emergency_savings / st.session_state['emergency_fund_goal'], 1.0)
             st.progress(progress)
@@ -634,6 +694,8 @@ elif menu == "Dashboard":
 
         # XP and Levels
         def calculate_xp(data):
+            if data.empty:
+                return st.session_state['xp']
             income_entries = data[data['Type'] == 'Income'].shape[0]
             expense_entries = data[data['Type'] == 'Expense'].shape[0]
             xp = (income_entries * 5) + (expense_entries * 3)
@@ -663,6 +725,10 @@ elif menu == "Dashboard":
             return xp
 
         st.session_state['xp'] = calculate_xp(user_data)
+        save_user_progress(st.session_state['username'], st.session_state['xp'], st.session_state['coins'],
+                          st.session_state['redeemed_rewards'], st.session_state['check_in_streak'],
+                          st.session_state['last_check_in'], st.session_state['quests_completed'],
+                          st.session_state['quiz_score'])
         level = st.session_state['xp'] // 100 + 1
         next_level_xp = (level * 100) - st.session_state['xp']
         st.markdown(f"#### 🎮 Level: {level}")
@@ -769,22 +835,24 @@ elif menu == "Financial Education":
 st.sidebar.file_uploader("Upload CSV", type="csv", key="file_uploader")
 if st.session_state.get('file_uploader'):
     uploaded_file = st.session_state['file_uploader']
-    uploaded_data = pd.read_csv(uploaded_file, parse_dates=['Date'])
-    if all(col in uploaded_data.columns for col in ['Username', 'Type', 'Amount', 'Category', 'Date']):
-        if pd.api.types.is_datetime64_any_dtype(uploaded_data['Date']):
-            uploaded_data = uploaded_data[uploaded_data['Username'] == st.session_state['username']]
-            if not uploaded_data.empty:
-                non_user_data = data[data['Username'] != st.session_state['username']]
-                st.session_state['data'] = pd.concat([non_user_data, uploaded_data], ignore_index=True)
-                st.session_state['data'].to_csv('user_data.csv', index=False)
-                st.success("Data uploaded successfully for your account!")
+    try:
+        uploaded_data = pd.read_csv(uploaded_file, parse_dates=['Date'])
+        if all(col in uploaded_data.columns for col in ['Username', 'Type', 'Amount', 'Category', 'Date']):
+            if pd.api.types.is_datetime64_any_dtype(uploaded_data['Date']):
+                uploaded_data = uploaded_data[uploaded_data['Username'] == st.session_state['username']]
+                if not uploaded_data.empty:
+                    non_user_data = data[data['Username'] != st.session_state['username']]
+                    st.session_state['data'] = pd.concat([non_user_data, uploaded_data], ignore_index=True)
+                    st.session_state['data'].to_csv('user_data.csv', index=False)
+                    st.success("Data uploaded successfully for your account!")
+                else:
+                    st.error("No data in the uploaded CSV matches your username.")
             else:
-                st.error("No data in the uploaded CSV matches your username.")
+                st.error("Date column in uploaded CSV is not in a valid datetime format.")
         else:
-            st.error("Date column in uploaded CSV is not in a valid datetime format.")
-    else:
-        st.error("Uploaded CSV must contain columns: Username, Type, Amount, Category, Date")
+            st.error("Uploaded CSV must contain columns: Username, Type, Amount, Category, Date")
+    except Exception as e:
+        st.error(f"Failed to process uploaded CSV: {str(e)}")
 
 user_csv = user_data.to_csv(index=False).encode('utf-8')
 st.sidebar.download_button("Download My Data", user_csv, f"{st.session_state['username']}_budget_data.csv", "text/csv")
-
