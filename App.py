@@ -135,6 +135,15 @@ def load_user_progress():
     columns = ['Username', 'XP', 'Coins', 'Redeemed_Rewards', 'Check_In_Streak', 'Last_Check_In', 'Quests_Completed', 'Quiz_Score']
     if os.path.exists('user_progress.csv'):
         try:
+            with open('user_progress.csv', 'r') as f:
+                raw_content = f.read()
+                if not raw_content.strip():
+                    st.warning("user_progress.csv is empty. Initializing new file.")
+                    df = pd.DataFrame(columns=columns)
+                    df.to_csv('user_progress.csv', index=False)
+                    return df
+                st.info(f"Raw contents of user_progress.csv:\n{raw_content[:500]}...")
+            
             df = pd.read_csv('user_progress.csv', dtype={
                 'Username': str,
                 'XP': float,
@@ -144,24 +153,30 @@ def load_user_progress():
                 'Last_Check_In': str,
                 'Quests_Completed': str,
                 'Quiz_Score': float
-            }, na_values=['', 'NaN'], keep_default_na=False)
+            }, na_values=['', 'NaN'], keep_default_na=False, skipinitialspace=True)
+            
             if not all(col in df.columns for col in columns):
                 st.error("user_progress.csv is missing required columns. Initializing new file.")
                 df = pd.DataFrame(columns=columns)
                 df.to_csv('user_progress.csv', index=False)
                 return df
-            df['Redeemed_Rewards'] = df['Redeemed_Rewards'].apply(
-                lambda x: eval(x) if pd.notna(x) and x != '' and isinstance(x, str) else []
-            )
-            df['Quests_Completed'] = df['Quests_Completed'].apply(
-                lambda x: eval(x) if pd.notna(x) and x != '' and isinstance(x, str) else []
-            )
+            
+            def safe_eval(x):
+                try:
+                    return eval(x) if pd.notna(x) and x != '' and isinstance(x, str) else []
+                except:
+                    return []
+            
+            df['Redeemed_Rewards'] = df['Redeemed_Rewards'].apply(safe_eval)
+            df['Quests_Completed'] = df['Quests_Completed'].apply(safe_eval)
             df['Last_Check_In'] = pd.to_datetime(df['Last_Check_In'], errors='coerce')
+            
             df = df.dropna(subset=['Username', 'XP', 'Coins', 'Check_In_Streak', 'Quiz_Score'])
             if df.empty and len(pd.read_csv('user_progress.csv').index) > 0:
                 st.warning("All rows in user_progress.csv were invalid. Initializing new file.")
                 df = pd.DataFrame(columns=columns)
                 df.to_csv('user_progress.csv', index=False)
+            
             return df
         except Exception as e:
             st.error(f"Failed to parse user_progress.csv: {str(e)}. Initializing new file.")
@@ -169,19 +184,21 @@ def load_user_progress():
             df.to_csv('user_progress.csv', index=False)
             return df
     else:
+        st.info("user_progress.csv not found. Initializing new file.")
         df = pd.DataFrame(columns=columns)
         df.to_csv('user_progress.csv', index=False)
         return df
 
 def save_user_progress(username, xp, coins, redeemed_rewards, check_in_streak, last_check_in, quests_completed, quiz_score):
     progress = load_user_progress()
-    xp = float(xp) if xp is not None else 0.0
-    coins = float(coins) if coins is not None else 0.0
-    check_in_streak = float(check_in_streak) if check_in_streak is not None else 0.0
-    quiz_score = float(quiz_score) if quiz_score is not None else 0.0
+    xp = float(xp) if xp is not None and isinstance(xp, (int, float)) else 0.0
+    coins = float(coins) if coins is not None and isinstance(coins, (int, float)) else 0.0
+    check_in_streak = float(check_in_streak) if check_in_streak is not None and isinstance(check_in_streak, (int, float)) else 0.0
+    quiz_score = float(quiz_score) if quiz_score is not None and isinstance(quiz_score, (int, float)) else 0.0
     redeemed_rewards = list(redeemed_rewards) if isinstance(redeemed_rewards, (list, tuple)) else []
     quests_completed = list(quests_completed) if isinstance(quests_completed, (list, tuple)) else []
     last_check_in_str = last_check_in.strftime('%Y-%m-%d %H:%M:%S') if pd.notnull(last_check_in) else ''
+    username = str(username).replace(',', '').replace('"', '') if username else 'unknown'
     
     if username in progress['Username'].values:
         progress.loc[progress['Username'] == username, [
@@ -193,7 +210,7 @@ def save_user_progress(username, xp, coins, redeemed_rewards, check_in_streak, l
         ]], columns=['Username', 'XP', 'Coins', 'Redeemed_Rewards', 'Check_In_Streak', 'Last_Check_In', 'Quests_Completed', 'Quiz_Score'])
         progress = pd.concat([progress, new_progress], ignore_index=True)
     
-    progress.to_csv('user_progress.csv', index=False, quoting=csv.QUOTE_NONNUMERIC)
+    progress.to_csv('user_progress.csv', index=False, quoting=csv.QUOTE_NONNUMERIC, escapechar='\\')
 
 # -------------------- User Login --------------------
 if 'username' not in st.session_state:
@@ -856,3 +873,8 @@ if st.session_state.get('file_uploader'):
 
 user_csv = user_data.to_csv(index=False).encode('utf-8')
 st.sidebar.download_button("Download My Data", user_csv, f"{st.session_state['username']}_budget_data.csv", "text/csv")
+
+
+ 
+  
+
