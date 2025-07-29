@@ -1,8 +1,7 @@
-matplotlib>=3.7
 yfinance>=0.2
 streamlit
 streamlit-authenticator
 streamlit==1.36.0
 pandas==2.2.2
-plotly==5.22.0
+matplotlib==3.9.0
 passlib==1.7.4
